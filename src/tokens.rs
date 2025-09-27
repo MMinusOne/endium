@@ -1,110 +1,127 @@
-pub enum Tokens {
-    // Variable assignment
+#[derive(Debug, Clone, PartialEq)]
+pub enum Token {
+    // Keywords
     Const,
     Let,
     Var,
+    Function,
+    Return,
+    Yield,
+    If,
+    Else,
+    Switch,
+    Case,
+    Break,
+    Continue,
+    Default,
+    For,
+    While,
+    Do,
+    Try,
+    Catch,
+    Finally,
+    Throw,
+    Class,
+    Extends,
+    Super,
+    This,
+    New,
+    Import,
+    Export,
+    From,
+    As,
+    Async,
+    Await,
+    With,
+    In,
+    Of,
+    InstanceOf,
+    Typeof,
+    Delete,
+    Void,
 
-    //Booleans
+    // Literals
     True,
     False,
+    Null,
+    Undefined,
+    Number(String),
+    String(String),
+    Identifier(String),
+    TemplateString(String),
 
-    // Misc
-    Increment,     // ++
-    Decrement,     // --
-    Null,          // null
-    Undefined,     // undefined
-    With,          // with
-    Comment,       // //
-    Spread,        // ...
-    OptionalChain, // ?.
-
-    // Math
-    Addition,       // +
-    Subtraction,    // -
-    Multiplication, // *
-    Division,       // /
-    Exponentiation,       // **
-    Modulo,         // %
+    // Operators
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Modulo,
+    Exponent,
 
     // Assignment
-    Assignment,     // =
-    AssignAddition, // +=
-    AssignSubtract, // -=
-    AssignMultiply, // *=
-    AssignDivide,   // /=
+    Assign,
+    PlusAssign,
+    MinusAssign,
+    MultiplyAssign,
+    DivideAssign,
+    ModuloAssign,
+    ExponentAssign,
 
-    //Loops
-    For,      // for
-    While,    // while
-    Continue, // continue
-    Do,       // do
+    // Increment/Decrement
+    Increment,
+    Decrement,
 
-    // Functions,
-    Function,      // function
-    Return,        // return,
-    Yield,         // yield
-    ArrowFunction, // =>
+    // Comparison
+    Equal,
+    NotEqual,
+    StrictEqual,
+    StrictNotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
 
-    // Comparasions
-    Equal,               // ==
-    StrictlyEqual,       // ===
-    StrictlyNotEqual,    // !==
-    NotEqual,            // !=
-    BiggerThan,          // >
-    LesserThan,          // <
-    NotBiggerThan,       // !<
-    NotLessThan,         // >!
-    BiggerThanOrEqualTo, // >=
-    LessThanOrEqualTo,   // =<
-    InstanceOf,          // instanceof
-    In,                  // in
-    BitWiseAnd,          // &
-    LogicalAnd,          // &&
-    LogicalOr,           // ||
-    Ternary,             // ?
-    Negation,            // !
-    NullishCaelscing,    // ??
+    // Logical
+    LogicalAnd,
+    LogicalOr,
+    LogicalNot,
 
-    //Promises
-    Async, // async
-    Await, // await
+    // Bitwise
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseNot,
+    LeftShift,
+    RightShift,
+    UnsignedRightShift,
 
-    //Statements
-    If,      // if
-    Else,    // else
-    Switch,  // switch
-    Case,    // case
-    Break,   // break
-    Default, // default
-
-    // Classes
-    Class,   // class
-    Extends, // extends
-    Super,   // super
-    This,    //this
-    New,     // new
-
-    // Error handling
-    Try,     // try
-    Catch,   // catch
-    Finally, // finally
+    // Other operators
+    ArrowFunction,
+    Ternary,
+    NullishCoalescing,
+    OptionalChaining,
+    Spread,
 
     // Punctuation
-    Comma,            // /
-    Semicolon,        // ;
-    Colon,            // :
-    Dot,              // .
-    OpenParanthesis,  // (
-    CloseParanthesis, // )
-    OpenBrace,        // {
-    CloseBrace,       // }
-    OpenBracket,      // [
-    CloseBracket,     // ]
-    Quote,            // '
-    DoubleQuote,      // "
-    Backtick,         // `
+    Semicolon,
+    Comma,
+    Dot,
+    Colon,
 
-    // Modules
-    Import, // import
-    Export, // export
+    // Brackets
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+
+    // Special
+    Newline,
+    Comment(String),
+    BlockComment(String),
+    Whitespace,
+
+    // End of file
+    Eof,
 }
