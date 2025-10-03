@@ -1,4 +1,4 @@
-use std::{error::Error, str::Chars};
+use std::{error::Error, str::Chars, thread::current};
 
 use crate::tokens::Token;
 
@@ -15,8 +15,112 @@ impl<'a> Lexer<'a> {
         let mut current_opcode = String::new();
 
         while let Some(ch) = self.skip_to_next() {
-            println!("{current_opcode}");
-            current_opcode.push(*ch);
+            let ch = *ch;
+
+            let token_char = match ch {
+                '.' => {
+                    let mut t = Token::Dot;
+
+                    if let (Some(next_c1), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
+                    {
+                        match (next_c1, next_c2) {
+                            ('.', '.') => {
+                                t = Token::Spread;
+                                self.skip_to_next();
+                            }
+                            ('?', _) => {
+                                t = Token::OptionalChaining;
+                                self.skip_to_next();
+                            }
+
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+
+                '!' => {
+                    let mut t = Token::LogicalNot;
+
+                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
+                    {
+                        match (next_c, next_c2) {
+                            ('=', '=') => {
+                                t = Token::StrictNotEqual;
+                                self.skip_to(2);
+                            }
+                            ('=', _) => {
+                                t = Token::NotEqual;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '&' => {
+                    let mut t = Token::BitwiseAnd;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '&' => {
+                                t = Token::LogicalAnd;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '|' => {
+                    let mut t = Token::BitwiseOr;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '|' => {
+                                t = Token::LogicalOr;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+
+                '(' => Token::LeftParen,
+                ')' => Token::RightParen,
+                '{' => Token::LeftBrace,
+                '}' => Token::RightBrace,
+                '[' => Token::LeftBracket,
+                ']' => Token::RightBracket,
+
+                ',' => Token::Comma,
+                ':' => Token::Colon,
+
+                '=' => Token::Assign,
+
+                ' ' => Token::Whitespace,
+                '\n' => Token::Newline,
+
+                _ => Token::NoToken,
+            };
+
+            if token_char != Token::NoToken {
+                if !current_opcode.is_empty() {
+                    tokens.push(Token::Identifier(current_opcode));
+                    current_opcode = String::new();
+                } else {
+                    tokens.push(token_char);
+                    current_opcode = String::new();
+                }
+                continue;
+            }
+
+            current_opcode.push(ch);
 
             let token = match current_opcode.as_str() {
                 "const" => Token::Const,
@@ -69,7 +173,6 @@ impl<'a> Lexer<'a> {
                     while let Some(c) = self.skip_to_next() {
                         match c {
                             '\"' => break,
-                            // Add more support for \n, \\, \", \'
                             _ => string.push(*c),
                         }
                     }
@@ -77,227 +180,12 @@ impl<'a> Lexer<'a> {
                     Token::String(string)
                 }
 
-                "=" => {
-                    let mut t = Token::Assign;
-
-                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c, next_c2) {
-                            ('=', '=') => {
-                                t = Token::StrictEqual;
-                                self.skip_to(2);
-                            }
-
-                            ('=', _) => {
-                                t = Token::ArrowFunction;
-                                self.skip_to_next();
-                            }
-                            ('>', _) => {
-                                t = Token::ArrowFunction;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                "+" => {
-                    let mut t = Token::Plus;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            &'+' => {
-                                t = Token::Increment;
-                                self.skip_to_next();
-                            }
-                            &'=' => {
-                                t = Token::PlusAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "-" => {
-                    let mut t = Token::Minus;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            &'-' => {
-                                t = Token::Decrement;
-                                self.skip_to_next();
-                            }
-                            &'=' => {
-                                t = Token::MinusAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "*" => {
-                    let mut t = Token::Multiply;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            &'*' => {
-                                if let Some(next_c2) = self.peek_next_to(2) {
-                                    match next_c2 {
-                                        &'=' => {
-                                            self.skip_to_next();
-                                            t = Token::ExponentAssign;
-                                        }
-                                        _ => {
-                                            t = Token::Exponent;
-                                            self.skip_to_next();
-                                        }
-                                    }
-                                } else {
-                                    t = Token::Exponent;
-                                    self.skip_to_next();
-                                }
-                            }
-                            &'=' => {
-                                t = Token::MultiplyAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "/" => {
-                    let mut t = Token::Divide;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            &'=' => {
-                                t = Token::DivideAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "%" => {
-                    let mut t = Token::Modulo;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            &'=' => {
-                                t = Token::ModuloAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                ";" => Token::Semicolon,
-                "," => Token::Comma,
-                ":" => Token::Colon,
-                "." => {
-                    let mut t = Token::Dot;
-
-                    if let (Some(next_c1), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c1, next_c2) {
-                            ('.', '.') => {
-                                t = Token::Spread;
-                                self.skip_to_next();
-                            }
-                            ('?', _) => {
-                                t = Token::OptionalChaining;
-                                self.skip_to_next();
-                            }
-
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                "!" => {
-                    let mut t = Token::LogicalNot;
-
-                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c, next_c2) {
-                            ('=', '=') => {
-                                t = Token::StrictNotEqual;
-                                self.skip_to(2);
-                            }
-                            ('=', _) => {
-                                t = Token::NotEqual;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "&" => {
-                    let mut t = Token::BitwiseAnd;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '&' => {
-                                t = Token::LogicalAnd;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                "|" => {
-                    let mut t = Token::BitwiseOr;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '|' => {
-                                t = Token::LogicalOr;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                "(" => Token::LeftParen,
-                ")" => Token::RightParen,
-                "{" => Token::LeftBrace,
-                "}" => Token::RightBrace,
-                "[" => Token::LeftBracket,
-                "]" => Token::RightBracket,
-
-                " " => Token::Whitespace,
-                "\r\n" | "\n" => Token::Newline,
                 _ => Token::NoToken,
             };
 
-            match token {
-                Token::NoToken => {}
-                _ => {
-                    tokens.push(token);
-                    current_opcode = String::new();
-                }
+            if token != Token::NoToken {
+                tokens.push(token);
+                current_opcode = String::new();
             }
         }
 
