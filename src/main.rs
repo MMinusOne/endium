@@ -1,4 +1,5 @@
 mod errors;
+mod interpretter;
 mod lexer;
 mod tokens;
 
@@ -17,15 +18,9 @@ fn main() {
         Err(e) => panic!("{:?}", e),
     };
 
-    let mut lexer = lexer::Lexer::new(&file_contents);
+    // let mut lexer = lexer::Lexer::new(&file_contents);
 
-    match lexer.tokenize() {
-        Ok(tokens) => {
-            for token in tokens {
-                println!("{:?}", token)
-            }
-        }
+    // let tokens = lexer.tokenize().unwrap();
 
-        Err(e) => println!("Lexer Error: {:?}", e),
-    }
+    // interpretter::Interpretter::new(tokens).execute();
 }
