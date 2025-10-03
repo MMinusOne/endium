@@ -103,6 +103,90 @@ impl<'a> Lexer<'a> {
 
                 '=' => Token::Assign,
 
+                '+' => {
+                    let mut t = Token::Plus;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '=' => {
+                                t = Token::PlusAssign;
+                                self.skip_to_next();
+                            }
+                            '+' => {
+                                t = Token::Increment;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '-' => {
+                    let mut t = Token::Minus;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '=' => {
+                                t = Token::MinusAssign;
+                                self.skip_to_next();
+                            }
+                            '-' => {
+                                t = Token::Decrement;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '*' => {
+                    let mut t = Token::Multiply;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '=' => {
+                                t = Token::MultiplyAssign;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '/' => {
+                    let mut t = Token::Divide;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '=' => {
+                                t = Token::DivideAssign;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+                '%' => {
+                    let mut t = Token::Modulo;
+
+                    if let Some(next_c) = self.peek_next() {
+                        match next_c {
+                            '=' => {
+                                t = Token::ModuloAssign;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
+
                 ' ' => Token::Whitespace,
                 '\n' => Token::Newline,
 
