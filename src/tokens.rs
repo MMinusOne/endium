@@ -121,7 +121,8 @@ pub enum Token {
     Comment(String),
     BlockComment(String),
     Whitespace,
-
+    
     // End of file
     Eof,
+    NoToken,
 }

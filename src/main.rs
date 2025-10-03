@@ -5,6 +5,8 @@ mod tokens;
 
 use std::env;
 
+use crate::errors::Error;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -13,14 +15,16 @@ fn main() {
         None => panic!("No file path provided"),
     };
 
-    let file_contents = match std::fs::read_to_string(&file_path) {
-        Ok(content) => content,
-        Err(e) => panic!("{:?}", e),
-    };
+    if let Ok(file_contents) = std::fs::read_to_string(&file_path) {
 
-    // let mut lexer = lexer::Lexer::new(&file_contents);
+        let mut lexer = lexer::Lexer::new(&file_contents);
+    
+        let tokens = lexer.tokenize().unwrap();
+    
+        println!("{:#?}", tokens);
 
-    // let tokens = lexer.tokenize().unwrap();
-
-    // interpretter::Interpretter::new(tokens).execute();
+        // interpretter::Interpretter::new(tokens).execute();
+    }else { 
+     Error::FileNotFound(file_path.to_string());
+    }
 }
