@@ -101,7 +101,30 @@ impl<'a> Lexer<'a> {
                 ',' => Token::Comma,
                 ':' => Token::Colon,
 
-                '=' => Token::Assign,
+                '=' => {
+                    let mut t = Token::Assign;
+
+                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
+                    {
+                        match (next_c, next_c2) {
+                            ('=', '=') => {
+                                t = Token::StrictEqual;
+                                self.skip_to(2);
+                            }
+                            ('=', _) => {
+                                t = Token::Equal;
+                                self.skip_to_next();
+                            }
+                            ('>', _) => {
+                                t = Token::ArrowFunction;
+                                self.skip_to_next();
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    t
+                }
 
                 '+' => {
                     let mut t = Token::Plus;
@@ -262,6 +285,30 @@ impl<'a> Lexer<'a> {
                     }
 
                     Token::String(string)
+                }
+
+                "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
+                    let mut string = String::new();
+                    let mut is_big_number = false;
+
+                    while let Some(c) = self.skip_to_next() {
+                        match c.to_string().parse::<f64>() {
+                            Ok(_) => string.push(*c),
+                            _ => {
+                                if c == &'n' {
+                                    is_big_number = true;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if is_big_number {
+                        Token::BigNumber(string)
+                    } else {
+                        Token::Number(string)
+                    }
                 }
 
                 _ => Token::NoToken,

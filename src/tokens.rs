@@ -46,6 +46,7 @@ pub enum Token {
     Null,
     Undefined,
     Number(String),
+    BigNumber(String),
     String(String),
     Identifier(String),
     TemplateString(String),
