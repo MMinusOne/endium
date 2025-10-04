@@ -1,1 +1,1 @@
-const word = "Hello";
+const word = 105;

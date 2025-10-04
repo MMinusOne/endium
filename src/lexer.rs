@@ -100,6 +100,7 @@ impl<'a> Lexer<'a> {
 
                 ',' => Token::Comma,
                 ':' => Token::Colon,
+                ';' => Token::Semicolon,
 
                 '=' => {
                     let mut t = Token::Assign;
@@ -211,7 +212,7 @@ impl<'a> Lexer<'a> {
                 }
 
                 ' ' => Token::Whitespace,
-                '\n' => Token::Newline,
+                '\r' | '\n' => Token::Newline,
 
                 _ => Token::NoToken,
             };
@@ -286,9 +287,51 @@ impl<'a> Lexer<'a> {
 
                     Token::String(string)
                 }
+                "`" => {
+                    let mut tokens = Vec::new();
+
+                    let mut current_string = String::new();
+
+                    while let Some(c) = self.skip_to_next() {
+                        let c = *c;
+                        match c {
+                            '$' => {
+                                if let Some(next_c) = self.peek_next() {
+                                    if next_c == &'{' {
+                                        tokens.push(Token::String(current_string));
+                                        current_string = String::new();
+                                        self.skip_to_next();
+
+                                        let mut template_string = String::new();
+
+                                        while let Some(tc) = self.skip_to_next() {
+                                            match tc {
+                                                '}' => {
+                                                    let template_string_tokens =
+                                                        Lexer::new(&template_string)
+                                                            .tokenize()
+                                                            .unwrap();
+                                                    tokens.extend(template_string_tokens);
+                                                    break;
+                                                }
+                                                _ => template_string.push(*tc),
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    current_string.push(c)
+                                }
+                            }
+                            '`' => break,
+                            _ => current_string.push(c),
+                        }
+                    }
+
+                    Token::TemplateString(tokens)
+                }
 
                 "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
-                    let mut string = String::new();
+                    let mut string = String::from(current_opcode.clone());
                     let mut is_big_number = false;
 
                     while let Some(c) = self.skip_to_next() {

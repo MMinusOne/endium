@@ -49,7 +49,7 @@ pub enum Token {
     BigNumber(String),
     String(String),
     Identifier(String),
-    TemplateString(String),
+    TemplateString(Vec<Token>),
 
     // Operators
     Plus,
