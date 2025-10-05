@@ -1,7 +1,7 @@
 use crate::scope::Scope;
 
-pub struct Interpretter {
-    global_scope: Scope,
+pub struct Interpretter<'a> {
+    global_scope: Scope<'a>,
 }
 
-impl Interpretter {}
+impl<'a> Interpretter<'a> {}

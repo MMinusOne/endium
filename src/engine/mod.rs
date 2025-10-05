@@ -8,3 +8,5 @@ pub mod tokens;
 use tokens::*;
 pub mod lexer;
 use lexer::*;
+pub mod heap;
+use heap::*;
