@@ -98,7 +98,7 @@ pub enum Token {
 
     // Other operators
     ArrowFunction,
-    Ternary,
+    Ternary(Vec<Token>, Vec<Token>, Vec<Token>),
     NullishCoalescing,
     OptionalChaining,
     Spread,
@@ -121,8 +121,7 @@ pub enum Token {
     Newline,
     Comment(String),
     BlockComment(String),
-    Whitespace,
-    
+
     // End of file
     Eof,
     NoToken,

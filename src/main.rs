@@ -1,7 +1,6 @@
+mod engine;
 mod errors;
-mod interpretter;
-mod lexer;
-mod tokens;
+use engine::*;
 
 use std::env;
 
@@ -16,15 +15,14 @@ fn main() {
     };
 
     if let Ok(file_contents) = std::fs::read_to_string(&file_path) {
-
         let mut lexer = lexer::Lexer::new(&file_contents);
-    
+
         let tokens = lexer.tokenize().unwrap();
-    
+
         println!("{:#?}", tokens);
 
         // interpretter::Interpretter::new(tokens).execute();
-    }else { 
-     Error::FileNotFound(file_path.to_string());
+    } else {
+        Error::FileNotFound(file_path.to_string());
     }
 }

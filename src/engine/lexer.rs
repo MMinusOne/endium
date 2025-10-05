@@ -1,5 +1,4 @@
 use std::error::Error;
-
 use crate::tokens::Token;
 
 pub struct Lexer {
@@ -249,10 +248,32 @@ impl Lexer {
 
             '\'' | '"' | '`' => Some(self.parse_string_or_template(ch)),
 
+            '?' => {
+                if self.peek_ahead(1) == Some('?') {
+                    self.position += 2;
+                    Some(Token::NullishCoalescing)
+                } else if self.peek_ahead(1) == Some('.') {
+                    self.position += 2;
+                    Some(Token::OptionalChaining)
+                } else {
+                    Some(self.parse_turnary())
+                }
+            }
+
             _ if ch.is_ascii_digit() => None,
 
             _ => None,
         }
+    }
+
+    pub fn parse_turnary(&mut self) -> Token {
+        self.position += 1;
+
+        let mut condition_string = String::new();
+        let mut true_string = String::new();
+        let mut false_string = String::new();
+
+        Token::Ternary(vec![], vec![], vec![])
     }
 
     pub fn match_token(&mut self, current_opcode: &String) -> Result<Token, Box<dyn Error>> {
