@@ -1,4 +1,4 @@
-use std::{error::Error, str::Chars, thread::current};
+use std::error::Error;
 
 use crate::tokens::Token;
 
@@ -55,6 +55,8 @@ impl Lexer {
                 tokens.push(token);
             }
         }
+
+        tokens.push(Token::Eof);
 
         Ok(tokens)
     }
