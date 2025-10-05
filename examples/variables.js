@@ -1,1 +1,0 @@
-const word = 105;

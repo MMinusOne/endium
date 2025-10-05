@@ -2,398 +2,412 @@ use std::{error::Error, str::Chars, thread::current};
 
 use crate::tokens::Token;
 
-pub struct Lexer<'a> {
-    code: &'a str,
+pub struct Lexer {
     code_chars: Vec<char>,
     position: usize,
 }
 
-impl<'a> Lexer<'a> {
+impl Lexer {
     pub fn tokenize(&mut self) -> Result<Vec<Token>, Box<dyn Error>> {
         let mut tokens: Vec<Token> = vec![];
 
         let mut current_opcode = String::new();
 
-        while let Some(ch) = self.skip_to_next() {
-            let ch = *ch;
+        while self.position < self.code_chars.len() {
+            let ch = self.code_chars[self.position];
 
-            let token_char = match ch {
-                '.' => {
-                    let mut t = Token::Dot;
-
-                    if let (Some(next_c1), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c1, next_c2) {
-                            ('.', '.') => {
-                                t = Token::Spread;
-                                self.skip_to_next();
-                            }
-                            ('?', _) => {
-                                t = Token::OptionalChaining;
-                                self.skip_to_next();
-                            }
-
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                '!' => {
-                    let mut t = Token::LogicalNot;
-
-                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c, next_c2) {
-                            ('=', '=') => {
-                                t = Token::StrictNotEqual;
-                                self.skip_to(2);
-                            }
-                            ('=', _) => {
-                                t = Token::NotEqual;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '&' => {
-                    let mut t = Token::BitwiseAnd;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '&' => {
-                                t = Token::LogicalAnd;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '|' => {
-                    let mut t = Token::BitwiseOr;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '|' => {
-                                t = Token::LogicalOr;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                '(' => Token::LeftParen,
-                ')' => Token::RightParen,
-                '{' => Token::LeftBrace,
-                '}' => Token::RightBrace,
-                '[' => Token::LeftBracket,
-                ']' => Token::RightBracket,
-
-                ',' => Token::Comma,
-                ':' => Token::Colon,
-                ';' => Token::Semicolon,
-
-                '=' => {
-                    let mut t = Token::Assign;
-
-                    if let (Some(next_c), Some(next_c2)) = (self.peek_next(), self.peek_next_to(2))
-                    {
-                        match (next_c, next_c2) {
-                            ('=', '=') => {
-                                t = Token::StrictEqual;
-                                self.skip_to(2);
-                            }
-                            ('=', _) => {
-                                t = Token::Equal;
-                                self.skip_to_next();
-                            }
-                            ('>', _) => {
-                                t = Token::ArrowFunction;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                '+' => {
-                    let mut t = Token::Plus;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '=' => {
-                                t = Token::PlusAssign;
-                                self.skip_to_next();
-                            }
-                            '+' => {
-                                t = Token::Increment;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '-' => {
-                    let mut t = Token::Minus;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '=' => {
-                                t = Token::MinusAssign;
-                                self.skip_to_next();
-                            }
-                            '-' => {
-                                t = Token::Decrement;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '*' => {
-                    let mut t = Token::Multiply;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '=' => {
-                                t = Token::MultiplyAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '/' => {
-                    let mut t = Token::Divide;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '=' => {
-                                t = Token::DivideAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-                '%' => {
-                    let mut t = Token::Modulo;
-
-                    if let Some(next_c) = self.peek_next() {
-                        match next_c {
-                            '=' => {
-                                t = Token::ModuloAssign;
-                                self.skip_to_next();
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    t
-                }
-
-                ' ' => Token::Whitespace,
-                '\r' | '\n' => Token::Newline,
-
-                _ => Token::NoToken,
-            };
-
-            if token_char != Token::NoToken {
+            if ch.is_whitespace() && ch != '\n' && ch != '\r' {
                 if !current_opcode.is_empty() {
-                    tokens.push(Token::Identifier(current_opcode));
-                    current_opcode = String::new();
-                } else {
-                    tokens.push(token_char);
-                    current_opcode = String::new();
+                    let token = self.match_token(&current_opcode)?;
+                    if token != Token::NoToken {
+                        tokens.push(token);
+                    }
+                    current_opcode.clear();
                 }
+                self.position += 1;
                 continue;
             }
 
-            current_opcode.push(ch);
+            let token_result = self.match_token_char(ch);
 
-            let token = match current_opcode.as_str() {
-                "const" => Token::Const,
-                "let" => Token::Let,
-                "var" => Token::Var,
-                "function" => Token::Function,
-                "return" => Token::Return,
-                "yield" => Token::Yield,
-                "if" => Token::If,
-                "else" => Token::Else,
-                "switch" => Token::Switch,
-                "case" => Token::Case,
-                "break" => Token::Break,
-                "continue" => Token::Continue,
-                "default" => Token::Default,
-                "for" => Token::For,
-                "while" => Token::While,
-                "do" => Token::Do,
-                "try" => Token::Try,
-                "catch" => Token::Catch,
-                "finally" => Token::Finally,
-                "throw" => Token::Throw,
-                "class" => Token::Class,
-                "extends" => Token::Extends,
-                "super" => Token::Super,
-                "this" => Token::This,
-                "new" => Token::New,
-                "import" => Token::Import,
-                "export" => Token::Export,
-                "from" => Token::From,
-                "as" => Token::As,
-                "async" => Token::Async,
-                "await" => Token::Await,
-                "with" => Token::With,
-                "in" => Token::In,
-                "of" => Token::Of,
-                "instanceof" => Token::InstanceOf,
-                "typeof" => Token::Typeof,
-                "delete" => Token::Delete,
-                "void" => Token::Void,
-
-                "true" => Token::True,
-                "false" => Token::False,
-                "null" => Token::Null,
-                "undefined" => Token::Undefined,
-
-                "\"" => {
-                    let mut string = String::new();
-
-                    while let Some(c) = self.skip_to_next() {
-                        match c {
-                            '\"' => break,
-                            _ => string.push(*c),
+            match token_result {
+                Some(token) => {
+                    if !current_opcode.is_empty() {
+                        let prev_token = self.match_token(&current_opcode)?;
+                        if prev_token != Token::NoToken {
+                            tokens.push(prev_token);
                         }
+                        current_opcode.clear();
                     }
-
-                    Token::String(string)
-                }
-                "`" => {
-                    let mut tokens = Vec::new();
-
-                    let mut current_string = String::new();
-
-                    while let Some(c) = self.skip_to_next() {
-                        let c = *c;
-                        match c {
-                            '$' => {
-                                if let Some(next_c) = self.peek_next() {
-                                    if next_c == &'{' {
-                                        tokens.push(Token::String(current_string));
-                                        current_string = String::new();
-                                        self.skip_to_next();
-
-                                        let mut template_string = String::new();
-
-                                        while let Some(tc) = self.skip_to_next() {
-                                            match tc {
-                                                '}' => {
-                                                    let template_string_tokens =
-                                                        Lexer::new(&template_string)
-                                                            .tokenize()
-                                                            .unwrap();
-                                                    tokens.extend(template_string_tokens);
-                                                    break;
-                                                }
-                                                _ => template_string.push(*tc),
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    current_string.push(c)
-                                }
-                            }
-                            '`' => break,
-                            _ => current_string.push(c),
-                        }
-                    }
-
-                    Token::TemplateString(tokens)
+                    tokens.push(token);
                 }
 
-                "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
-                    let mut string = String::from(current_opcode.clone());
-                    let mut is_big_number = false;
-
-                    while let Some(c) = self.skip_to_next() {
-                        match c.to_string().parse::<f64>() {
-                            Ok(_) => string.push(*c),
-                            _ => {
-                                if c == &'n' {
-                                    is_big_number = true;
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if is_big_number {
-                        Token::BigNumber(string)
-                    } else {
-                        Token::Number(string)
-                    }
+                None => {
+                    current_opcode.push(ch);
+                    self.position += 1;
                 }
+            }
+        }
 
-                _ => Token::NoToken,
-            };
-
+        if !current_opcode.is_empty() {
+            let token = self.match_token(&current_opcode)?;
             if token != Token::NoToken {
                 tokens.push(token);
-                current_opcode = String::new();
             }
         }
 
         Ok(tokens)
     }
 
-    pub fn skip_to(&mut self, skip_count: usize) -> Option<&char> {
-        self.position += skip_count;
-        self.at(self.position)
+    fn peek_ahead(&self, offset: usize) -> Option<char> {
+        self.code_chars.get(self.position + offset).copied()
     }
 
-    pub fn skip_to_next(&mut self) -> Option<&char> {
+    pub fn match_token_char(&mut self, ch: char) -> Option<Token> {
+        match ch {
+            '.' => {
+                if self.peek_ahead(1) == Some('.') && self.peek_ahead(2) == Some('.') {
+                    self.position += 3;
+                    Some(Token::Spread)
+                } else if self.peek_ahead(1) == Some('?') {
+                    self.position += 2;
+                    Some(Token::OptionalChaining)
+                } else {
+                    self.position += 1;
+                    Some(Token::Dot)
+                }
+            }
+
+            '!' => {
+                if self.peek_ahead(1) == Some('=') && self.peek_ahead(2) == Some('=') {
+                    self.position += 3;
+                    Some(Token::StrictNotEqual)
+                } else if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::NotEqual)
+                } else {
+                    self.position += 1;
+                    Some(Token::LogicalNot)
+                }
+            }
+            '&' => {
+                if self.peek_ahead(1) == Some('&') {
+                    self.position += 2;
+                    Some(Token::LogicalAnd)
+                } else {
+                    self.position += 1;
+                    Some(Token::BitwiseAnd)
+                }
+            }
+            '|' => {
+                if self.peek_ahead(1) == Some('|') {
+                    self.position += 2;
+                    Some(Token::LogicalOr)
+                } else {
+                    self.position += 1;
+                    Some(Token::BitwiseOr)
+                }
+            }
+
+            '(' => {
+                self.position += 1;
+                Some(Token::LeftParen)
+            }
+            ')' => {
+                self.position += 1;
+                Some(Token::RightParen)
+            }
+            '{' => {
+                self.position += 1;
+                Some(Token::LeftBrace)
+            }
+            '}' => {
+                self.position += 1;
+                Some(Token::RightBrace)
+            }
+            '[' => {
+                self.position += 1;
+                Some(Token::LeftBracket)
+            }
+            ']' => {
+                self.position += 1;
+                Some(Token::RightBracket)
+            }
+
+            ',' => {
+                self.position += 1;
+                Some(Token::Comma)
+            }
+            ':' => {
+                self.position += 1;
+                Some(Token::Colon)
+            }
+            ';' => {
+                self.position += 1;
+                Some(Token::Semicolon)
+            }
+
+            '=' => {
+                if self.peek_ahead(1) == Some('=') && self.peek_ahead(2) == Some('=') {
+                    self.position += 3;
+                    Some(Token::StrictEqual)
+                } else if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::Equal)
+                } else if self.peek_ahead(1) == Some('>') {
+                    self.position += 2;
+                    Some(Token::ArrowFunction)
+                } else {
+                    self.position += 1;
+                    Some(Token::Assign)
+                }
+            }
+
+            '+' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::PlusAssign)
+                } else if self.peek_ahead(1) == Some('+') {
+                    self.position += 2;
+                    Some(Token::Increment)
+                } else {
+                    self.position += 1;
+                    Some(Token::Plus)
+                }
+            }
+            '-' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::MinusAssign)
+                } else if self.peek_ahead(1) == Some('-') {
+                    self.position += 2;
+                    Some(Token::Decrement)
+                } else {
+                    self.position += 1;
+                    Some(Token::Minus)
+                }
+            }
+            '*' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::MultiplyAssign)
+                } else {
+                    self.position += 1;
+                    Some(Token::Multiply)
+                }
+            }
+            '/' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::DivideAssign)
+                } else {
+                    self.position += 1;
+                    Some(Token::Divide)
+                }
+            }
+            '%' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::ModuloAssign)
+                } else {
+                    self.position += 1;
+                    Some(Token::Modulo)
+                }
+            }
+
+            '\r' | '\n' => {
+                self.position += 1;
+                Some(Token::Newline)
+            }
+
+            '\'' | '"' | '`' => Some(self.parse_string_or_template(ch)),
+
+            _ if ch.is_ascii_digit() => None,
+
+            _ => None,
+        }
+    }
+
+    pub fn match_token(&mut self, current_opcode: &String) -> Result<Token, Box<dyn Error>> {
+        if current_opcode
+            .chars()
+            .next()
+            .map_or(false, |c| c.is_ascii_digit())
+        {
+            return Ok(self.parse_number(current_opcode));
+        }
+
+        let token = match current_opcode.as_str() {
+            "const" => Token::Const,
+            "let" => Token::Let,
+            "var" => Token::Var,
+            "function" => Token::Function,
+            "return" => Token::Return,
+            "yield" => Token::Yield,
+            "if" => Token::If,
+            "else" => Token::Else,
+            "switch" => Token::Switch,
+            "case" => Token::Case,
+            "break" => Token::Break,
+            "continue" => Token::Continue,
+            "default" => Token::Default,
+            "for" => Token::For,
+            "while" => Token::While,
+            "do" => Token::Do,
+            "try" => Token::Try,
+            "catch" => Token::Catch,
+            "finally" => Token::Finally,
+            "throw" => Token::Throw,
+            "class" => Token::Class,
+            "extends" => Token::Extends,
+            "super" => Token::Super,
+            "this" => Token::This,
+            "new" => Token::New,
+            "import" => Token::Import,
+            "export" => Token::Export,
+            "from" => Token::From,
+            "as" => Token::As,
+            "async" => Token::Async,
+            "await" => Token::Await,
+            "with" => Token::With,
+            "in" => Token::In,
+            "of" => Token::Of,
+            "instanceof" => Token::InstanceOf,
+            "typeof" => Token::Typeof,
+            "delete" => Token::Delete,
+            "void" => Token::Void,
+
+            "true" => Token::True,
+            "false" => Token::False,
+            "null" => Token::Null,
+            "undefined" => Token::Undefined,
+
+            _ => {
+                if !current_opcode.is_empty() {
+                    Token::Identifier(current_opcode.to_string())
+                } else {
+                    Token::NoToken
+                }
+            }
+        };
+
+        Ok(token)
+    }
+
+    fn parse_number(&self, start: &str) -> Token {
+        let mut num_str = start.to_string();
+        let mut pos = self.position;
+
+        while pos < self.code_chars.len() {
+            let ch = self.code_chars[pos];
+            if ch.is_ascii_digit() || ch == '.' {
+                num_str.push(ch);
+                pos += 1;
+            } else if ch == 'n' {
+                pos += 1;
+                return Token::BigNumber(num_str);
+            } else {
+                break;
+            }
+        }
+
+        Token::Number(num_str)
+    }
+
+    fn parse_string_or_template(&mut self, quote: char) -> Token {
         self.position += 1;
-        self.at(self.position - 1)
+
+        if quote == '`' {
+            return self.parse_template_string();
+        }
+
+        let mut string = String::new();
+
+        while self.position < self.code_chars.len() {
+            let ch = self.code_chars[self.position];
+            self.position += 1;
+
+            if ch == quote {
+                break;
+            } else if ch == '\\' && self.position < self.code_chars.len() {
+                let next = self.code_chars[self.position];
+                self.position += 1;
+                string.push(match next {
+                    'n' => '\n',
+                    't' => '\t',
+                    'r' => '\r',
+                    '\\' => '\\',
+                    '\'' => '\'',
+                    '\"' => '"',
+                    _ => next,
+                });
+            } else {
+                string.push(ch);
+            }
+        }
+
+        Token::String(string)
     }
 
-    pub fn peek_next(&self) -> Option<&char> {
-        self.at(self.position + 1)
+    fn parse_template_string(&mut self) -> Token {
+        let mut tokens = Vec::new();
+        let mut current_string = String::new();
+
+        while self.position < self.code_chars.len() {
+            let ch = self.code_chars[self.position];
+
+            if ch == '$' && self.peek_ahead(1) == Some('{') {
+                if !current_string.is_empty() || tokens.is_empty() {
+                    tokens.push(Token::String(current_string.clone()));
+                    current_string.clear();
+                }
+
+                self.position += 2;
+
+                let mut depth = 1;
+                let mut expr = String::new();
+
+                while self.position < self.code_chars.len() && depth > 0 {
+                    let ch = self.code_chars[self.position];
+                    self.position += 1;
+
+                    if ch == '{' {
+                        depth += 1;
+                        expr.push(ch);
+                    } else if ch == '}' {
+                        depth -= 1;
+                        if depth > 0 {
+                            expr.push(ch)
+                        }
+                    } else {
+                        expr.push(ch);
+                    }
+                }
+
+                if let Ok(expr_tokens) = Lexer::new(&expr).tokenize() {
+                    tokens.extend(expr_tokens);
+                }
+            } else if ch == '`' {
+                self.position += 1;
+                break;
+            } else {
+                current_string.push(ch);
+                self.position += 1;
+            }
+        }
+
+        if !current_string.is_empty() {
+            tokens.push(Token::String(current_string));
+        }
+
+        Token::TemplateString(tokens)
     }
 
-    pub fn peek_next_to(&self, offset: usize) -> Option<&char> {
-        self.at(self.position + offset)
-    }
-
-    pub fn at(&self, pos: usize) -> Option<&char> {
-        self.code_chars.get(pos)
-    }
-
-    pub fn new(code: &'a str) -> Self {
+    pub fn new(code: &String) -> Self {
         let code_chars = code.chars().collect();
 
         Self {
             position: 0,
-            code: code,
             code_chars,
         }
     }
