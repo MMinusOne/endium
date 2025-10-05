@@ -163,6 +163,25 @@ impl Lexer {
                 }
             }
 
+            '<' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::LessThanOrEqual)
+                } else {
+                    self.position += 1;
+                    Some(Token::LessThan)
+                }
+            }
+            '>' => {
+                if self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::GreaterThanOrEqual)
+                } else {
+                    self.position += 1;
+                    Some(Token::GreaterThan)
+                }
+            }
+
             '+' => {
                 if self.peek_ahead(1) == Some('=') {
                     self.position += 2;
@@ -188,7 +207,13 @@ impl Lexer {
                 }
             }
             '*' => {
-                if self.peek_ahead(1) == Some('=') {
+                if self.peek_ahead(1) == Some('*') && self.peek_ahead(1) == Some('=') {
+                    self.position += 2;
+                    Some(Token::ExponentAssign)
+                } else if self.peek_ahead(1) == Some('*') {
+                    self.position += 2;
+                    Some(Token::Exponent)
+                } else if self.peek_ahead(1) == Some('=') {
                     self.position += 2;
                     Some(Token::MultiplyAssign)
                 } else {
