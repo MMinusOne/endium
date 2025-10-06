@@ -98,7 +98,7 @@ pub enum Token {
 
     // Other operators
     ArrowFunction,
-    Ternary(Vec<Token>, Vec<Token>, Vec<Token>),
+    Ternary,
     NullishCoalescing,
     OptionalChaining,
     Spread,

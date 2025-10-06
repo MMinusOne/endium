@@ -8,6 +8,7 @@ pub struct Scope<'a> {
     depth: usize,
     instructions: Vec<Token>,
     parent: Option<&'a Scope<'a>>,
+    children: Vec<&'a Scope<'a>>,
 
     intialized_parent_state: bool,
     heap: &'a Heap,
@@ -16,6 +17,9 @@ pub struct Scope<'a> {
 impl<'a> Scope<'a> {
     pub fn initialize_parent_state(&mut self) {
         if let Some(parent) = self.parent {
+            if self.intialized_parent_state == true {
+                return;
+            }
             for (key, value) in parent.state.iter() {
                 match value {
                     ValueVariant::String(js_string) => {
@@ -40,9 +44,10 @@ impl<'a> Scope<'a> {
             intialized_parent_state: false,
             state: HashMap::new(),
             depth: match parent {
-                Some(p) => p.depth - 1,
+                Some(p) => p.depth + 1,
                 None => 0,
             },
+            children: vec![],
             instructions,
         }
     }

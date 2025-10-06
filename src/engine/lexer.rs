@@ -1,5 +1,5 @@
-use std::error::Error;
 use crate::tokens::Token;
+use std::error::Error;
 
 pub struct Lexer {
     code_chars: Vec<char>,
@@ -256,7 +256,7 @@ impl Lexer {
                     self.position += 2;
                     Some(Token::OptionalChaining)
                 } else {
-                    Some(self.parse_turnary())
+                    Some(Token::Ternary)
                 }
             }
 
@@ -264,16 +264,6 @@ impl Lexer {
 
             _ => None,
         }
-    }
-
-    pub fn parse_turnary(&mut self) -> Token {
-        self.position += 1;
-
-        let mut condition_string = String::new();
-        let mut true_string = String::new();
-        let mut false_string = String::new();
-
-        Token::Ternary(vec![], vec![], vec![])
     }
 
     pub fn match_token(&mut self, current_opcode: &String) -> Result<Token, Box<dyn Error>> {
