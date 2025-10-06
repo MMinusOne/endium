@@ -11,7 +11,6 @@ pub struct Scope<'a> {
     children: Vec<&'a Scope<'a>>,
 
     intialized_parent_state: bool,
-    heap: &'a Heap,
 }
 
 impl<'a> Scope<'a> {
@@ -32,14 +31,15 @@ impl<'a> Scope<'a> {
                         self.state
                             .insert(key.to_string(), ValueVariant::Pointer(js_ptr.clone()));
                     }
+                    ValueVariant::Null => {}
+                    ValueVariant::Undefined => {}
                 }
             }
         }
     }
 
     pub fn new(parent: Option<&'a Scope>, instructions: Vec<Token>) -> Self {
-        Self {
-            heap: Heap::instance(),
+        let mut scope_self = Self {
             parent: parent,
             intialized_parent_state: false,
             state: HashMap::new(),
@@ -49,6 +49,10 @@ impl<'a> Scope<'a> {
             },
             children: vec![],
             instructions,
-        }
+        };
+
+        scope_self.initialize_parent_state();
+
+        scope_self
     }
 }

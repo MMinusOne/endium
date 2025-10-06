@@ -1,16 +1,34 @@
-use std::sync::OnceLock;
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Mutex, OnceLock},
+};
 
-#[derive()]
-pub struct Heap {}
+use crate::{apis::type_variants::js_pointer::JSPointer, engine::value_variant::ValueVariant};
 
-static INSTANCE: OnceLock<Heap> = OnceLock::new();
+pub struct Heap {
+    state: HashMap<String, ValueVariant>,
+}
+
+static INSTANCE: OnceLock<Mutex<Heap>> = OnceLock::new();
 
 impl Heap {
-    pub fn new() -> Self {
-        Self {}
+    pub fn instance() -> &'static Mutex<Self> {
+        INSTANCE.get_or_init(|| Mutex::new(Self::new()))
     }
 
-    pub fn instance() -> &'static Self {
-        INSTANCE.get_or_init(Self::new)
+    pub fn get_ptr(&self, ptr: &String) -> Option<&ValueVariant> {
+        self.state.get(ptr)
+    }
+
+    pub fn allocate_ptr(&mut self, ptr: JSPointer) {
+        let value = ptr.ptr_value().clone();
+        self.state.insert(ptr.ptr().clone(), value);
+    }
+
+    pub fn new() -> Self {
+        Self {
+            state: HashMap::new(),
+        }
     }
 }
