@@ -2,14 +2,19 @@ use std::error::Error;
 
 use crate::{engine::{tokens::Token, value_variant::ValueVariant}, scope::Scope};
 
-pub struct Interpretter<'a> {
-    root_scope: Scope<'a>,
+pub struct Interpretter {
+    root_scope: Scope,
     interpretted_value: ValueVariant
 }
 
-impl<'a> Interpretter<'a> {
+impl Interpretter {
     pub fn execute(&self) -> Result<(), Box<dyn Error>> { 
+       
         Ok(())
+    }
+
+    pub fn interpretted_value(&self) -> &ValueVariant { 
+        &self.interpretted_value
     }
 
     pub fn new(tokens: Vec<Token>) -> Self {

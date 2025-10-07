@@ -1,21 +1,25 @@
 use crate::engine::heap::Heap;
 use crate::engine::tokens::Token;
 use crate::engine::value_variant::ValueVariant;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
-pub struct Scope<'a> {
+#[derive(Clone)]
+pub struct Scope {
     state: HashMap<String, ValueVariant>,
     depth: usize,
     instructions: Vec<Token>,
-    parent: Option<&'a Scope<'a>>,
-    children: Vec<&'a Scope<'a>>,
+    parent: Option<Rc<RefCell<Scope>>>,
+    children: Vec<Rc<RefCell<Scope>>>,
 
     intialized_parent_state: bool,
 }
 
-impl<'a> Scope<'a> {
+impl Scope {
     pub fn initialize_parent_state(&mut self) {
-        if let Some(parent) = self.parent {
+        if let Some(parent) = &self.parent {
+            let parent = parent.borrow();
             if self.intialized_parent_state == true {
                 return;
             }
@@ -38,20 +42,29 @@ impl<'a> Scope<'a> {
         }
     }
 
-    pub fn new(parent: Option<&'a Scope>, instructions: Vec<Token>) -> Self {
+    pub fn add_child(&mut self, scope: Scope) {
+        self.children.push(Rc::new(RefCell::new(scope)));
+    }
+
+    pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {
+        let parent_depth = parent.as_ref().map(|p| p.depth).unwrap_or(0);
+        let parent_rc = parent.map(|p| Rc::new(RefCell::new(p)));
+
         let mut scope_self = Self {
-            parent: parent,
+            parent: parent_rc.clone(),
             intialized_parent_state: false,
             state: HashMap::new(),
-            depth: match parent {
-                Some(p) => p.depth + 1,
-                None => 0,
-            },
+            depth: parent_depth,
             children: vec![],
             instructions,
         };
 
         scope_self.initialize_parent_state();
+
+        if let Some(scope_parent) = &scope_self.parent {
+            let mut scope_parent = scope_parent.borrow_mut();
+            scope_parent.add_child(scope_self.clone());
+        }
 
         scope_self
     }
