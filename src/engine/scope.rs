@@ -26,15 +26,16 @@ impl Scope {
             for (key, value) in parent.state.iter() {
                 match value {
                     ValueVariant::String(js_string) => {
-                        self.state.insert(
-                            key.to_string(),
-                            ValueVariant::Pointer(js_string.heap_ptr().clone()),
-                        );
+                        // self.state.insert(
+                        //     key.to_string(),
+                        //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
+                        // );
                     }
                     ValueVariant::Pointer(js_ptr) => {
                         self.state
                             .insert(key.to_string(), ValueVariant::Pointer(js_ptr.clone()));
                     }
+                    ValueVariant::Number(js_number) => {}
                     ValueVariant::Null => {}
                     ValueVariant::Undefined => {}
                 }

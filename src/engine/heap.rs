@@ -33,3 +33,11 @@ impl Heap {
         }
     }
 }
+
+// pub struct HeapAllocator;
+
+// impl HeapAllocator {
+//     pub fn allocate_heap(&self, heap: &Heap, value: ValueVariant) -> &String {
+        
+//     }
+// }
