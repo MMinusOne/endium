@@ -1,13 +1,13 @@
 use crate::engine::heap::Heap;
 use crate::engine::tokens::Token;
-use crate::engine::value_variant::ValueVariant;
+use crate::engine::value_variant::JSValueVariant;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Scope {
-    state: HashMap<String, ValueVariant>,
+    state: HashMap<String, JSValueVariant>,
     depth: usize,
     instructions: Vec<Token>,
     parent: Option<Rc<RefCell<Scope>>>,
@@ -25,19 +25,19 @@ impl Scope {
             }
             for (key, value) in parent.state.iter() {
                 match value {
-                    ValueVariant::String(js_string) => {
+                    JSValueVariant::JSString(js_string) => {
                         // self.state.insert(
                         //     key.to_string(),
                         //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
                         // );
                     }
-                    ValueVariant::Pointer(js_ptr) => {
+                    JSValueVariant::JSPointer(js_ptr) => {
                         self.state
-                            .insert(key.to_string(), ValueVariant::Pointer(js_ptr.clone()));
+                            .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
                     }
-                    ValueVariant::Number(js_number) => {}
-                    ValueVariant::Null => {}
-                    ValueVariant::Undefined => {}
+                    JSValueVariant::JSNumber(js_number) => {}
+                    JSValueVariant::Null => {}
+                    JSValueVariant::Undefined => {}
                 }
             }
         }
@@ -51,7 +51,7 @@ impl Scope {
         &self.instructions
     }
 
-    pub fn insert_state(&mut self, key: String, value: ValueVariant) {
+    pub fn insert_state(&mut self, key: String, value: JSValueVariant) {
         self.state.insert(key, value);
     }
 

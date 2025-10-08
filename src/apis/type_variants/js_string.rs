@@ -1,10 +1,6 @@
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
-use crate::{
-    apis::type_variants::{js_number::JSNumber, js_pointer::JSPointer},
-    engine::{heap::Heap, value_variant::ValueVariant},
-    utils::generate_memory_address,
-};
+use crate::{apis::type_variants::js_number::JSNumber, engine::value_variant::JSValueVariant};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum JSStringProperty {
@@ -14,7 +10,7 @@ enum JSStringProperty {
 #[derive(Clone, Debug)]
 pub struct JSString {
     is_primitive: bool,
-    properties: HashMap<JSStringProperty, ValueVariant>,
+    properties: HashMap<JSStringProperty, JSValueVariant>,
     str_value: String,
 }
 
@@ -35,7 +31,7 @@ impl JSString {
             str_value,
             properties: HashMap::from([(
                 JSStringProperty::Length,
-                ValueVariant::Number(JSNumber::new(str_len as f64)),
+                JSValueVariant::JSNumber(JSNumber::new(str_len as f64)),
             )]),
         };
 

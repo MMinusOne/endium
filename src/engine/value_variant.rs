@@ -1,13 +1,13 @@
 use crate::apis::type_variants::{js_number::*, js_pointer::*, js_string::*};
 
 #[derive(Clone, Debug)]
-pub enum ValueVariant {
-    String(JSString),
-    Number(JSNumber),
+pub enum JSValueVariant {
+    JSString(JSString),
+    JSNumber(JSNumber),
     // Boolean(JSBool),
     // Array(JSArray),
     // Object(JSObject),
-    Pointer(JSPointer),
+    JSPointer(JSPointer),
     Null,
     Undefined,
 }

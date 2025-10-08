@@ -1,15 +1,12 @@
 use std::error::Error;
 
-use crate::{
-    engine::{heap::Heap, value_variant::ValueVariant},
-    utils::generate_memory_address,
-};
+use crate::{engine::value_variant::JSValueVariant, utils::generate_memory_address};
 
 #[derive(Clone, Debug)]
 pub struct JSPointer {
     is_primitive: bool,
     ptr: String,
-    ptr_value: Box<ValueVariant>,
+    ptr_value: Box<JSValueVariant>,
 }
 
 impl JSPointer {
@@ -17,11 +14,11 @@ impl JSPointer {
         &self.ptr
     }
 
-    pub fn ptr_value(&self) -> &ValueVariant {
+    pub fn ptr_value(&self) -> &JSValueVariant {
         &self.ptr_value
     }
 
-    pub fn allocate_value(&mut self, value: ValueVariant) -> Result<(), Box<dyn Error>> {
+    pub fn allocate_value(&mut self, value: JSValueVariant) -> Result<(), Box<dyn Error>> {
         self.ptr_value = Box::new(value);
         Ok(())
     }
@@ -30,7 +27,7 @@ impl JSPointer {
         Self {
             is_primitive: false,
             ptr,
-            ptr_value: Box::new(ValueVariant::Undefined),
+            ptr_value: Box::new(JSValueVariant::Undefined),
         }
     }
 
@@ -38,7 +35,7 @@ impl JSPointer {
         Self {
             is_primitive: false,
             ptr: generate_memory_address(),
-            ptr_value: Box::new(ValueVariant::Undefined),
+            ptr_value: Box::new(JSValueVariant::Undefined),
         }
     }
 }

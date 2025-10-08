@@ -1,15 +1,15 @@
 use std::{error::Error, sync::Mutex};
 
 use crate::{
-    apis::type_variants::{js_pointer::JSPointer, js_string::JSString},
-    engine::{heap::Heap, tokens::Token, value_variant::ValueVariant},
+    apis::type_variants::js_string::JSString,
+    engine::{heap::Heap, tokens::Token, value_variant::JSValueVariant},
     scope::Scope,
 };
 
 pub struct Interpretter {
     scope: Scope,
     instructions: Vec<Token>,
-    interpretted_value: ValueVariant,
+    interpretted_value: JSValueVariant,
     position: usize,
     heap: &'static Mutex<Heap>,
 }
@@ -24,7 +24,7 @@ impl Interpretter {
 
                 Token::String(s) => {
                     self.position += 1;
-                    self.interpretted_value = ValueVariant::String(JSString::new(s.clone())); // Unhandled strings by other tokens are the interpretted_value
+                    self.interpretted_value = JSValueVariant::JSString(JSString::new(s.clone())); // Unhandled strings by other tokens are the interpretted_value
                 }
 
                 _ => {
@@ -70,7 +70,7 @@ impl Interpretter {
         }
     }
 
-    pub fn interpretted_value(&self) -> &ValueVariant {
+    pub fn interpretted_value(&self) -> &JSValueVariant {
         &self.interpretted_value
     }
 
@@ -83,7 +83,7 @@ impl Interpretter {
         Self {
             instructions: scope.instructions().clone(),
             scope,
-            interpretted_value: ValueVariant::Undefined,
+            interpretted_value: JSValueVariant::Undefined,
             position: 0,
             heap: Heap::instance(),
         }

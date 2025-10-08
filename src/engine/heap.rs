@@ -4,11 +4,11 @@ use std::{
     sync::{Mutex, OnceLock},
 };
 
-use crate::{apis::type_variants::js_pointer::JSPointer, engine::value_variant::ValueVariant};
+use crate::{apis::type_variants::js_pointer::JSPointer, engine::value_variant::JSValueVariant};
 
 #[derive(Debug)]
 pub struct Heap {
-    state: HashMap<String, ValueVariant>,
+    state: HashMap<String, JSValueVariant>,
 }
 
 static INSTANCE: OnceLock<Mutex<Heap>> = OnceLock::new();
@@ -18,7 +18,7 @@ impl Heap {
         INSTANCE.get_or_init(|| Mutex::new(Self::new()))
     }
 
-    pub fn get_ptr(&self, ptr: &String) -> Option<&ValueVariant> {
+    pub fn get_ptr(&self, ptr: &String) -> Option<&JSValueVariant> {
         self.state.get(ptr)
     }
 
@@ -38,6 +38,6 @@ impl Heap {
 
 // impl HeapAllocator {
 //     pub fn allocate_heap(&self, heap: &Heap, value: ValueVariant) -> &String {
-        
+
 //     }
 // }
