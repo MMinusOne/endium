@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 use crate::{
     apis::type_variants::js_pointer::JSPointer,
@@ -6,21 +6,21 @@ use crate::{
     utils::generate_memory_address,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+enum JSStringProperty {
+    Length,
+}
+
+#[derive(Clone, Debug)]
 pub struct JSString {
     is_primitive: bool,
-    length: usize,
+    properties: HashMap<JSStringProperty, ValueVariant>,
     str_value: String,
-    heap_ptr: Box<JSPointer>,
 }
 
 impl JSString {
     pub fn is_primitive(&self) -> bool {
         self.is_primitive
-    }
-
-    pub fn heap_ptr(&self) -> &JSPointer {
-        &self.heap_ptr
     }
 
     pub fn str_value(&self) -> &String {
@@ -34,9 +34,11 @@ impl JSString {
 
         let str_self = Self {
             is_primitive: false,
-            heap_ptr,
             str_value,
-            length: str_len,
+            // properties: HashMap::from([(
+            //     JSStringProperty::Length,
+            //     ValueVariant::Number(str_value.len()),
+            // )]),
         };
 
         str_self

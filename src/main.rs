@@ -2,13 +2,13 @@ mod apis;
 mod engine;
 mod errors;
 mod utils;
-use utils::*;
 use apis::*;
 use engine::*;
+use utils::*;
 
 use std::env;
 
-use crate::errors::Error;
+use crate::{engine::heap::Heap, errors::Error};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -25,7 +25,8 @@ fn main() {
 
         println!("{:#?}", tokens);
 
-        // interpretter::Interpretter::new(tokens).execute();
+        let _ = interpretter::Interpretter::new(Some(tokens), None).execute();
+        let heap_data = Heap::instance().lock().unwrap();
     } else {
         Error::FileNotFound(file_path.to_string());
     }

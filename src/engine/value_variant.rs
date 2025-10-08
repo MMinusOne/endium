@@ -1,6 +1,6 @@
 use crate::apis::type_variants::{js_pointer::*, js_string::*};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ValueVariant {
     String(JSString),
     // Number(JSNumber),

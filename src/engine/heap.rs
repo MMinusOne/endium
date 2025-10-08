@@ -6,6 +6,7 @@ use std::{
 
 use crate::{apis::type_variants::js_pointer::JSPointer, engine::value_variant::ValueVariant};
 
+#[derive(Debug)]
 pub struct Heap {
     state: HashMap<String, ValueVariant>,
 }

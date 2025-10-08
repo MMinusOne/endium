@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Scope {
     state: HashMap<String, ValueVariant>,
     depth: usize,
@@ -44,6 +44,14 @@ impl Scope {
 
     pub fn add_child(&mut self, scope: Scope) {
         self.children.push(Rc::new(RefCell::new(scope)));
+    }
+
+    pub fn instructions(&self) -> &Vec<Token> {
+        &self.instructions
+    }
+
+    pub fn insert_state(&mut self, key: String, value: ValueVariant) {
+        self.state.insert(key, value);
     }
 
     pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {

@@ -5,7 +5,7 @@ use crate::{
     utils::generate_memory_address,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct JSPointer {
     is_primitive: bool,
     ptr: String,
@@ -34,17 +34,11 @@ impl JSPointer {
         }
     }
 
-    pub fn new() -> JSPointer {
-        let mut heap = Heap::instance().lock().unwrap();
-
-        let ptr_self = JSPointer {
+    pub fn new() -> Self {
+        Self {
             is_primitive: false,
             ptr: generate_memory_address(),
             ptr_value: Box::new(ValueVariant::Undefined),
-        };
-
-        heap.allocate_ptr(ptr_self.clone());
-
-        ptr_self
+        }
     }
 }
