@@ -55,8 +55,12 @@ impl Scope {
         self.state.insert(key, value);
     }
 
-    pub fn get_state(&mut self, key: &String) -> Option<&JSValueVariant> {
+    pub fn get_state(&self, key: &String) -> Option<&JSValueVariant> {
         self.state.get(key)
+    }
+
+    pub fn get_state_mut(&mut self, key: &String) -> Option<&mut JSValueVariant> {
+        self.state.get_mut(key)
     }
 
     pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {

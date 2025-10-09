@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{apis::type_variants::js_number::JSNumber, engine::value_variant::JSValueVariant};
+use crate::{
+    apis::{
+        features::assignment::addition_assignment::AdditionAssignment,
+        type_variants::js_number::JSNumber,
+    },
+    engine::value_variant::JSValueVariant,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum JSStringProperty {
@@ -36,5 +42,20 @@ impl JSString {
         };
 
         str_self
+    }
+
+    pub fn set_str_value(&mut self, str_addition: &String) {
+        self.str_value = str_addition.to_string();
+    }
+}
+
+impl AdditionAssignment for JSString {
+    fn addition_assignment(&mut self, value: &JSValueVariant) {
+        match value {
+            JSValueVariant::JSNumber(js_num) => {
+                self.str_value += &js_num.number_value().to_string()
+            }
+            _ => {}
+        }
     }
 }

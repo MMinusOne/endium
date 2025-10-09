@@ -1,4 +1,7 @@
-use crate::{apis::features::increment::Increment, engine::value_variant::JSValueVariant};
+use crate::{
+    apis::features::assignment::addition_assignment::AdditionAssignment,
+    engine::value_variant::JSValueVariant,
+};
 
 #[derive(Clone, Debug)]
 pub struct JSNumber {
@@ -7,6 +10,10 @@ pub struct JSNumber {
 }
 
 impl JSNumber {
+    pub fn number_value(&self) -> f64 {
+        self.number_value
+    }
+
     pub fn new(number_value: f64) -> Self {
         Self {
             is_primitive: true,
@@ -15,13 +22,13 @@ impl JSNumber {
     }
 }
 
-impl Increment for JSNumber {
-    fn increment(&self, value: JSValueVariant) -> JSValueVariant {
+impl AdditionAssignment for JSNumber {
+    fn addition_assignment(&mut self, value: &JSValueVariant) {
         match value {
             JSValueVariant::JSNumber(js_num) => {
-                JSValueVariant::JSNumber(JSNumber::new(self.number_value + js_num.number_value))
+                self.number_value = self.number_value + js_num.number_value;
             }
-            _ => JSValueVariant::JSNumber(self.clone()),
+            _ => {}
         }
     }
 }

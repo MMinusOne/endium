@@ -1,4 +1,5 @@
-use crate::apis::features::increment::Increment;
+use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
+
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
     engine::{heap::Heap, tokens::Token, value_variant::JSValueVariant},
@@ -24,14 +25,12 @@ impl Interpretter {
                 Token::String(s) => {
                     self.position += 1;
                     self.interpretted_value = JSValueVariant::JSString(JSString::new(s.clone())); // Unhandled strings by other tokens are the interpretted_value    
-                    return Ok(());
                 }
 
                 Token::Number(n) => {
                     self.position += 1;
                     let number = n.parse::<f64>()?;
                     self.interpretted_value = JSValueVariant::JSNumber(JSNumber::new(number));
-                    return Ok(());
                 }
 
                 Token::Identifier(identifier) => self.handle_identifier(identifier),
@@ -39,18 +38,17 @@ impl Interpretter {
                 Token::Null => {
                     self.position += 1;
                     self.interpretted_value = JSValueVariant::Null;
-                    return Ok(());
                 }
 
                 Token::Undefined => {
                     self.position += 1;
                     self.interpretted_value = JSValueVariant::Undefined;
-                    return Ok(());
                 }
+
+                Token::Eof => break,
 
                 _ => {
                     self.position += 1;
-                    return Ok(());
                 }
             };
         }
@@ -65,18 +63,19 @@ impl Interpretter {
             let v_token = v_token.clone();
 
             match v_token {
-                Token::Newline | Token::Semicolon => break,
+                Token::Newline | Token::Semicolon => {
+                    return value_tokens;
+                }
                 _ => {}
             }
 
             value_tokens.push(v_token);
             self.position += 1;
         }
-
         value_tokens
     }
 
-    pub fn handle_const(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn handle_const(&mut self) {
         self.position += 1; // Skip the `const` keyword.
 
         let current_token = self.instructions[self.position].clone();
@@ -94,7 +93,6 @@ impl Interpretter {
                 let value = value_interpretter.interpretted_value;
 
                 self.scope.insert_state(variable_name.to_string(), value);
-                println!("{:#?}", self.scope);
             }
 
             Token::LeftBrace => {
@@ -102,49 +100,83 @@ impl Interpretter {
             }
             _ => {}
         }
-
-        Ok(())
     }
 
-    pub fn handle_identifier(&mut self, identifier: &String) -> Result<(), Box<dyn Error>> {
-        self.position += 1;
-
+    pub fn handle_identifier(&mut self, identifier: &String) {
         if let Some(operator) = self.instructions.get(self.position + 1) {
+            self.position += 1;
+            let operator = operator.clone();
+            let value_tokens = self.value_collector();
+            let parent_scope = self.scope.clone();
+            println!("{:?}", operator);
             match operator {
-                Token::Increment => {
-                    self.position += 1;
-                    let value_tokens = self.value_collector();
-                    let parent_scope = self.scope.clone();
-
-                    let variable = self.scope.get_state(identifier).unwrap();
-
+                Token::Increment => self.handle_increment(identifier),
+                Token::Decrement => self.handle_decrement(identifier),
+                Token::PlusAssign
+                | Token::MinusAssign
+                | Token::DivideAssign
+                | Token::MultiplyAssign => {
                     let value_scope = Scope::new(Some(parent_scope), value_tokens);
                     let mut value_interpretter = Interpretter::new(None, Some(value_scope));
                     value_interpretter.execute().unwrap();
                     let value = value_interpretter.interpretted_value;
 
-                    // Handle the incrementations.
-                    match variable {
-                        JSValueVariant::JSNumber(js_number) => {
-                            js_number.increment(value);
+                    match operator {
+                        Token::PlusAssign => self.handle_addition_assignment(identifier, value),
+                        Token::MinusAssign => self.handle_subtraction_assignment(identifier, value),
+                        Token::MultiplyAssign => {
+                            self.handle_multiplication_assignment(identifier, value)
                         }
-
-                        JSValueVariant::JSString(js_string) => {
-                            js_string.increment(value);
-                        }
-
+                        Token::DivideAssign => self.handle_division_assignment(identifier, value),
                         _ => {}
-                    };
+                    }
                 }
+
                 _ => {}
-            }
+            };
         } else {
             let variable = self.scope.get_state(identifier).unwrap();
 
             self.interpretted_value = variable.clone();
         }
-        Ok(())
     }
+
+    fn handle_increment(&mut self, variable_identifier: &String) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        match variable_mut {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_decrement(&mut self, variable_identifier: &String) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+
+        match variable_mut {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(-1.0)));
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_addition_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
+
+    fn handle_subtraction_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
+
+    fn handle_multiplication_assignment(
+        &self,
+        variable_identifier: &String,
+        value: JSValueVariant,
+    ) {
+    }
+
+    fn handle_division_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
 
     pub fn interpretted_value(&self) -> &JSValueVariant {
         &self.interpretted_value

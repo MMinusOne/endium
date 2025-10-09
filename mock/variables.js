@@ -1,1 +1,2 @@
-const singleQuoteString = 'Hello World'; 
+const number = 2;
+number++;
