@@ -55,6 +55,10 @@ impl Scope {
         self.state.insert(key, value);
     }
 
+    pub fn get_state(&mut self, key: &String) -> Option<&JSValueVariant> {
+        self.state.get(key)
+    }
+
     pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {
         let parent_depth = parent.as_ref().map(|p| p.depth).unwrap_or(0);
         let parent_rc = parent.map(|p| Rc::new(RefCell::new(p)));
