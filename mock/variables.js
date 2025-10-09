@@ -1,2 +1,3 @@
-const number = 2;
-number++;
+const num = 2;
+num++;
+num++;

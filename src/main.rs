@@ -2,9 +2,7 @@ mod apis;
 mod engine;
 mod errors;
 mod utils;
-use apis::*;
 use engine::*;
-use utils::*;
 
 use std::env;
 
@@ -25,8 +23,10 @@ fn main() {
 
         println!("{:#?}", tokens);
 
-        let _ = interpretter::Interpretter::new(Some(tokens), None).execute();
+        let mut interpretter = interpretter::Interpretter::new(Some(tokens), None);
+        let _ = interpretter.execute();
         let heap_data = Heap::instance().lock().unwrap();
+        println!("{:#?}", interpretter.scope());
     } else {
         Error::FileNotFound(file_path.to_string());
     }

@@ -1,11 +1,10 @@
 use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
-
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
-    engine::{heap::Heap, tokens::Token, value_variant::JSValueVariant},
+    engine::{tokens::Token, value_variant::JSValueVariant},
     scope::Scope,
 };
-use std::{error::Error, sync::Mutex};
+use std::error::Error;
 
 pub struct Interpretter {
     scope: Scope,
@@ -52,7 +51,6 @@ impl Interpretter {
                 }
             };
         }
-
         Ok(())
     }
 
@@ -108,7 +106,7 @@ impl Interpretter {
             let operator = operator.clone();
             let value_tokens = self.value_collector();
             let parent_scope = self.scope.clone();
-            println!("{:?}", operator);
+
             match operator {
                 Token::Increment => self.handle_increment(identifier),
                 Token::Decrement => self.handle_decrement(identifier),
@@ -180,6 +178,10 @@ impl Interpretter {
 
     pub fn interpretted_value(&self) -> &JSValueVariant {
         &self.interpretted_value
+    }
+
+    pub fn scope(&self) -> &Scope {
+        &self.scope
     }
 
     pub fn new(tokens: Option<Vec<Token>>, scope: Option<Scope>) -> Self {
