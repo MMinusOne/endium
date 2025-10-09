@@ -25,7 +25,7 @@ impl JSPointer {
 
     pub fn from(ptr: String) -> Self {
         Self {
-            is_primitive: false,
+            is_primitive: true,
             ptr,
             ptr_value: Box::new(JSValueVariant::Undefined),
         }
@@ -33,7 +33,7 @@ impl JSPointer {
 
     pub fn new() -> Self {
         Self {
-            is_primitive: false,
+            is_primitive: true,
             ptr: generate_memory_address(),
             ptr_value: Box::new(JSValueVariant::Undefined),
         }

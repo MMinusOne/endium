@@ -1,14 +1,14 @@
 #[derive(Clone, Debug)]
 pub struct JSNumber {
     is_primitive: bool,
-    number: f64,
+    number_value: f64,
 }
 
 impl JSNumber {
-    pub fn new(number: f64) -> Self {
+    pub fn new(number_value: f64) -> Self {
         Self {
             is_primitive: true,
-            number,
+            number_value,
         }
     }
 }
