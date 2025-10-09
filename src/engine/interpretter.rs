@@ -32,6 +32,16 @@ impl Interpretter {
                     self.interpretted_value = JSValueVariant::JSNumber(JSNumber::new(number));
                 }
 
+                Token::Null => {
+                    self.position += 1;
+                    self.interpretted_value = JSValueVariant::Null;
+                }
+
+                Token::Undefined => {
+                    self.position += 1;
+                    self.interpretted_value = JSValueVariant::Undefined;
+                }
+
                 _ => {
                     self.position += 1;
                 }
