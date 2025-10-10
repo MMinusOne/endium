@@ -1,5 +1,7 @@
 use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
 use crate::apis::features::assignment::decrement_assignment::DecrementAssignment;
+use crate::apis::features::assignment::division_assignment::DivisionAssignment;
+use crate::apis::features::assignment::multiplication_assignment::MultiplicationAssignment;
 use crate::engine::state::State;
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
@@ -249,13 +251,44 @@ impl Interpretter {
     }
 
     fn handle_multiplication_assignment(
-        &self,
+        &mut self,
         variable_identifier: &String,
         value: JSValueVariant,
     ) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.multiplication_assignment(&value);
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.multiplication_assignment(&value);
+            }
+            _ => {}
+        }
     }
 
-    fn handle_division_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
+    fn handle_division_assignment(&mut self, variable_identifier: &String, value: JSValueVariant) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.division_assignment(&value);
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.division_assignment(&value);
+            }
+            _ => {}
+        }
+    }
 
     pub fn interpretted_value(&self) -> &JSValueVariant {
         &self.interpretted_value

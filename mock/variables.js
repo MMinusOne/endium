@@ -1,2 +1,3 @@
-const num = 2;
-num++;
+let number = 5;
+
+number -= 2;

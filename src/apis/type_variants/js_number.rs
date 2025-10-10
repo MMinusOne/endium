@@ -1,6 +1,11 @@
 use crate::{
-    apis::features::assignment::{
-        addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+    apis::{
+        features::assignment::{
+            addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+            division_assignment::DivisionAssignment,
+            multiplication_assignment::MultiplicationAssignment,
+        },
+        type_variants::js_string::JSString,
     },
     engine::value_variant::JSValueVariant,
 };
@@ -44,4 +49,19 @@ impl DecrementAssignment for JSNumber {
             _ => {}
         }
     }
+}
+
+impl MultiplicationAssignment for JSNumber {
+    fn multiplication_assignment(&mut self, value: &JSValueVariant) {
+        match value {
+            JSValueVariant::JSNumber(js_num) => {
+                self.number_value = self.number_value * js_num.number_value;
+            }
+            _ => {}
+        }
+    }
+}
+
+impl DivisionAssignment for JSNumber {
+    fn division_assignment(&mut self, value: &JSValueVariant) {}
 }
