@@ -1,3 +1,2 @@
-let number = 5;
-
-number -= 2;
+let number = 10;
+let is_10 = number == 10;

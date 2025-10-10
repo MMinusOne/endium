@@ -201,10 +201,10 @@ impl Interpretter {
 
         match variable_mut.value_mut() {
             JSValueVariant::JSNumber(js_number) => {
-                js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(-1.0)));
+                js_number.decrement_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
             }
             JSValueVariant::JSString(js_string) => {
-                js_string.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(-1.0)));
+                js_string.decrement_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
             }
             _ => {}
         }
@@ -288,10 +288,6 @@ impl Interpretter {
             }
             _ => {}
         }
-    }
-
-    pub fn interpretted_value(&self) -> &JSValueVariant {
-        &self.interpretted_value
     }
 
     pub fn scope(&self) -> &Scope {

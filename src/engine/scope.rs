@@ -36,6 +36,7 @@ impl Scope {
                         // self.state
                         //     .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
                     }
+                    JSValueVariant::JSBoolean(js_bool) => {}
                     JSValueVariant::JSNumber(js_number) => {}
                     JSValueVariant::Null => {}
                     JSValueVariant::Undefined => {}

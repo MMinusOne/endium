@@ -63,5 +63,12 @@ impl MultiplicationAssignment for JSNumber {
 }
 
 impl DivisionAssignment for JSNumber {
-    fn division_assignment(&mut self, value: &JSValueVariant) {}
+    fn division_assignment(&mut self, value: &JSValueVariant) {
+        match value {
+            JSValueVariant::JSNumber(js_num) => {
+                self.number_value = self.number_value / js_num.number_value;
+            }
+            _ => {}
+        }
+    }
 }
