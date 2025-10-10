@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     apis::{
-        features::assignment::addition_assignment::AdditionAssignment,
+        features::assignment::{
+            addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+        },
         type_variants::js_number::JSNumber,
     },
     engine::value_variant::JSValueVariant,
@@ -55,6 +57,14 @@ impl AdditionAssignment for JSString {
             JSValueVariant::JSNumber(js_num) => {
                 self.str_value += &js_num.number_value().to_string()
             }
+            _ => {}
+        }
+    }
+}
+
+impl DecrementAssignment for JSString {
+    fn decrement_assignment(&mut self, value: &JSValueVariant) {
+        match value {
             _ => {}
         }
     }

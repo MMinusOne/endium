@@ -1,4 +1,6 @@
 use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
+use crate::apis::features::assignment::decrement_assignment::DecrementAssignment;
+use crate::engine::state::State;
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
     engine::{tokens::Token, value_variant::JSValueVariant},
@@ -20,6 +22,8 @@ impl Interpretter {
         while let Some(token) = scope_instructions.get(self.position) {
             let _ = match token {
                 Token::Const => self.handle_const(),
+
+                Token::Let => self.handle_let(),
 
                 Token::String(s) => {
                     self.position += 1;
@@ -89,8 +93,37 @@ impl Interpretter {
                 let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
                 value_interpretter.execute().unwrap();
                 let value = value_interpretter.interpretted_value;
+                let state: State = State::new(value, false);
 
-                self.scope.insert_state(variable_name.to_string(), value);
+                self.scope.insert_state(variable_name.to_string(), state);
+            }
+
+            Token::LeftBrace => {
+                //Manage destruction.
+            }
+            _ => {}
+        }
+    }
+
+    pub fn handle_let(&mut self) {
+        self.position += 1; // Skip the `const` keyword.
+
+        let current_token = self.instructions[self.position].clone();
+
+        match current_token {
+            Token::Identifier(variable_name) => {
+                self.position += 2; // Skip variable_name and `=`
+
+                let value_tokens: Vec<Token> = self.value_collector();
+                let parent_scope = self.scope.clone();
+
+                let value_scope = Scope::new(Some(parent_scope), value_tokens);
+                let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
+                value_interpretter.execute().unwrap();
+                let value = value_interpretter.interpretted_value;
+                let state: State = State::new(value, true);
+
+                self.scope.insert_state(variable_name.to_string(), state);
             }
 
             Token::LeftBrace => {
@@ -135,13 +168,18 @@ impl Interpretter {
         } else {
             let variable = self.scope.get_state(identifier).unwrap();
 
-            self.interpretted_value = variable.clone();
+            self.interpretted_value = variable.value().clone();
         }
     }
 
     fn handle_increment(&mut self, variable_identifier: &String) {
         let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
-        match variable_mut {
+
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
             JSValueVariant::JSNumber(js_number) => {
                 js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
             }
@@ -155,17 +193,60 @@ impl Interpretter {
     fn handle_decrement(&mut self, variable_identifier: &String) {
         let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
 
-        match variable_mut {
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
             JSValueVariant::JSNumber(js_number) => {
                 js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(-1.0)));
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(-1.0)));
             }
             _ => {}
         }
     }
 
-    fn handle_addition_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
+    fn handle_addition_assignment(&mut self, variable_identifier: &String, value: JSValueVariant) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
 
-    fn handle_subtraction_assignment(&self, variable_identifier: &String, value: JSValueVariant) {}
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.addition_assignment(&value);
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.addition_assignment(&value);
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_subtraction_assignment(
+        &mut self,
+        variable_identifier: &String,
+        value: JSValueVariant,
+    ) {
+        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+
+        if !variable_mut.is_mutable() {
+            return; // Assignment to constant variable error.
+        }
+
+        match variable_mut.value_mut() {
+            JSValueVariant::JSNumber(js_number) => {
+                js_number.decrement_assignment(&value);
+            }
+            JSValueVariant::JSString(js_string) => {
+                js_string.decrement_assignment(&value);
+            }
+            _ => {}
+        }
+    }
 
     fn handle_multiplication_assignment(
         &self,

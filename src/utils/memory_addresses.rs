@@ -1,4 +1,4 @@
-use rand::{rng, Rng};
+use rand::{Rng, rng};
 
 pub fn generate_memory_address() -> String {
     let mut rng = rng();

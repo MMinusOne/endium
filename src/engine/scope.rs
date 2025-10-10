@@ -1,4 +1,5 @@
 use crate::engine::heap::Heap;
+use crate::engine::state::State;
 use crate::engine::tokens::Token;
 use crate::engine::value_variant::JSValueVariant;
 use std::cell::RefCell;
@@ -7,7 +8,7 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Scope {
-    state: HashMap<String, JSValueVariant>,
+    state: HashMap<String, State>,
     depth: usize,
     instructions: Vec<Token>,
     parent: Option<Rc<RefCell<Scope>>>,
@@ -23,8 +24,8 @@ impl Scope {
             if self.intialized_parent_state == true {
                 return;
             }
-            for (key, value) in parent.state.iter() {
-                match value {
+            for (key, state) in parent.state.iter() {
+                match state.value() {
                     JSValueVariant::JSString(js_string) => {
                         // self.state.insert(
                         //     key.to_string(),
@@ -32,8 +33,8 @@ impl Scope {
                         // );
                     }
                     JSValueVariant::JSPointer(js_ptr) => {
-                        self.state
-                            .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
+                        // self.state
+                        //     .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
                     }
                     JSValueVariant::JSNumber(js_number) => {}
                     JSValueVariant::Null => {}
@@ -51,15 +52,15 @@ impl Scope {
         &self.instructions
     }
 
-    pub fn insert_state(&mut self, key: String, value: JSValueVariant) {
-        self.state.insert(key, value);
+    pub fn insert_state(&mut self, key: String, state: State) {
+        self.state.insert(key, state);
     }
 
-    pub fn get_state(&self, key: &String) -> Option<&JSValueVariant> {
+    pub fn get_state(&self, key: &String) -> Option<&State> {
         self.state.get(key)
     }
 
-    pub fn get_state_mut(&mut self, key: &String) -> Option<&mut JSValueVariant> {
+    pub fn get_state_mut(&mut self, key: &String) -> Option<&mut State> {
         self.state.get_mut(key)
     }
 

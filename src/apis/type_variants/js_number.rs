@@ -1,5 +1,7 @@
 use crate::{
-    apis::features::assignment::addition_assignment::AdditionAssignment,
+    apis::features::assignment::{
+        addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+    },
     engine::value_variant::JSValueVariant,
 };
 
@@ -27,6 +29,17 @@ impl AdditionAssignment for JSNumber {
         match value {
             JSValueVariant::JSNumber(js_num) => {
                 self.number_value = self.number_value + js_num.number_value;
+            }
+            _ => {}
+        }
+    }
+}
+
+impl DecrementAssignment for JSNumber {
+    fn decrement_assignment(&mut self, value: &JSValueVariant) {
+        match value {
+            JSValueVariant::JSNumber(js_num) => {
+                self.number_value = self.number_value - js_num.number_value;
             }
             _ => {}
         }

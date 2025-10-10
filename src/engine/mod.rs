@@ -1,12 +1,7 @@
-pub mod interpretter;
-use interpretter::*;
-pub mod scope;
-use scope::*;
-pub mod value_variant;
-use value_variant::*;
-pub mod tokens;
-use tokens::*;
-pub mod lexer;
-use lexer::*;
 pub mod heap;
-use heap::*;
+pub mod interpretter;
+pub mod lexer;
+pub mod scope;
+pub mod state;
+pub mod tokens;
+pub mod value_variant;
