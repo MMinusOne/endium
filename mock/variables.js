@@ -1,1 +1,2 @@
-const template_str = `Hello ${2++}`;
+const string_1 = "Sussy";
+const template_str = `${string_1} Baka`;

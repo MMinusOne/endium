@@ -1,3 +1,4 @@
+use crate::apis::type_variants::js_string::JSString;
 use crate::engine::heap::Heap;
 use crate::engine::state::State;
 use crate::engine::tokens::Token;
@@ -31,6 +32,7 @@ impl Scope {
                         //     key.to_string(),
                         //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
                         // );
+                        self.state.insert(key.to_string(), state.clone());
                     }
                     JSValueVariant::JSPointer(js_ptr) => {
                         // self.state

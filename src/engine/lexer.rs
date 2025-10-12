@@ -55,7 +55,7 @@ impl Lexer {
             }
         }
 
-        tokens.push(Token::Eof);
+        // tokens.push(Token::Eof);
 
         Ok(tokens)
     }

@@ -49,8 +49,7 @@ impl Interpretter {
                     self.interpretted_value = JSValueVariant::Undefined;
                 }
 
-                Token::Eof => break,
-
+                // Token::Eof => break,
                 _ => {
                     self.position += 1;
                 }
@@ -65,7 +64,6 @@ impl Interpretter {
         let mut position = 0;
 
         while let Some(expr) = template_tokens.get(position) {
-            println!("{:?}", position);
             position += 1;
             match expr {
                 Token::String(js_string) => {
@@ -99,19 +97,21 @@ impl Interpretter {
 
     pub fn handle_number(&mut self, n: &String) {
         self.position += 1;
-        let number = n.parse::<f64>().unwrap();
 
+        let number = n.parse::<f64>().unwrap();
         let mut number = JSNumber::new(number);
 
-        if let Some(operator) = self.instructions.get(self.position + 1) {
+        if let Some(operator) = self.instructions.get(self.position) {
             match operator {
                 Token::Increment => {
                     number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
                     self.interpretted_value = JSValueVariant::JSNumber(number);
+                    self.position += 1;
                 }
                 Token::Decrement => {
                     number.decrement_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
                     self.interpretted_value = JSValueVariant::JSNumber(number);
+                    self.position += 1;
                 }
                 _ => {
                     self.interpretted_value = JSValueVariant::JSNumber(number);
@@ -230,8 +230,8 @@ impl Interpretter {
             };
         } else {
             let variable = self.scope.get_state(identifier).unwrap();
-
             self.interpretted_value = variable.value().clone();
+            self.position += 1;
         }
     }
 
