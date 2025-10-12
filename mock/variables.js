@@ -1,2 +1,1 @@
-let number = 10;
-let is_10 = number == 10;
+const template_str = `Hello ${2++}`;

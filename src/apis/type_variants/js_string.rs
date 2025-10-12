@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use crate::{
     apis::{
         features::assignment::{
-            addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment, division_assignment::DivisionAssignment, multiplication_assignment::MultiplicationAssignment
+            addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+            division_assignment::DivisionAssignment,
+            multiplication_assignment::MultiplicationAssignment,
         },
         type_variants::js_number::JSNumber,
     },
@@ -31,7 +33,18 @@ impl JSString {
         &self.str_value
     }
 
-    pub fn new(str_value: String) -> Self {
+    pub fn new() -> Self {
+        Self {
+            is_primitive: false,
+            str_value: String::new(),
+            properties: HashMap::from([(
+                JSStringProperty::Length,
+                JSValueVariant::JSNumber(JSNumber::new(0f64)),
+            )]),
+        }
+    }
+
+    pub fn from(str_value: String) -> Self {
         let str_len = str_value.len();
 
         let str_self = Self {
@@ -55,12 +68,15 @@ impl AdditionAssignment for JSString {
     fn addition_assignment(&mut self, value: &JSValueVariant) {
         match value {
             JSValueVariant::JSNumber(js_num) => {
-                self.str_value += &js_num.number_value().to_string()
+                self.str_value += &js_num.number_value().to_string();
             }
             JSValueVariant::JSString(string) => {
                 self.str_value += &string.str_value;
             }
             _ => {}
+        }
+        if let Some(length) = self.properties.get_mut(&JSStringProperty::Length) {
+            *length = JSValueVariant::JSNumber(JSNumber::new(self.str_value.len() as f64));
         }
     }
 }
@@ -73,14 +89,10 @@ impl DecrementAssignment for JSString {
     }
 }
 
-impl MultiplicationAssignment for JSString { 
-    fn multiplication_assignment(&mut self, value: &JSValueVariant) {
-        
-    }
+impl MultiplicationAssignment for JSString {
+    fn multiplication_assignment(&mut self, value: &JSValueVariant) {}
 }
 
-impl DivisionAssignment for JSString { 
-    fn division_assignment(&mut self, value: &JSValueVariant) {
-        
-    }
+impl DivisionAssignment for JSString {
+    fn division_assignment(&mut self, value: &JSValueVariant) {}
 }

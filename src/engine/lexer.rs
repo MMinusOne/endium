@@ -423,7 +423,7 @@ impl Lexer {
                 }
 
                 if let Ok(expr_tokens) = Lexer::new(&expr).tokenize() {
-                    tokens.extend(expr_tokens);
+                    tokens.push(Token::TemplateExpr(expr_tokens));
                 }
             } else if ch == '`' {
                 self.position += 1;

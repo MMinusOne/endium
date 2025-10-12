@@ -9,6 +9,7 @@ use crate::{
     scope::Scope,
 };
 use std::error::Error;
+use std::os;
 
 pub struct Interpretter {
     scope: Scope,
@@ -29,14 +30,12 @@ impl Interpretter {
 
                 Token::String(s) => {
                     self.position += 1;
-                    self.interpretted_value = JSValueVariant::JSString(JSString::new(s.clone())); // Unhandled strings by other tokens are the interpretted_value    
+                    self.interpretted_value = JSValueVariant::JSString(JSString::from(s.clone())); // Unhandled strings by other tokens are the interpretted_value    
                 }
 
-                Token::Number(n) => {
-                    self.position += 1;
-                    let number = n.parse::<f64>()?;
-                    self.interpretted_value = JSValueVariant::JSNumber(JSNumber::new(number));
-                }
+                Token::TemplateString(t_s) => self.handle_template_string(t_s),
+
+                Token::Number(n) => self.handle_number(n),
 
                 Token::Identifier(identifier) => self.handle_identifier(identifier),
 
@@ -60,17 +59,77 @@ impl Interpretter {
         Ok(())
     }
 
-    pub fn value_collector(&mut self) -> Vec<Token> {
+    pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
+        self.position += 1;
+        let mut templated_string = JSString::new();
+        let mut position = 0;
+
+        while let Some(expr) = template_tokens.get(position) {
+            println!("{:?}", position);
+            position += 1;
+            match expr {
+                Token::String(js_string) => {
+                    templated_string.addition_assignment(&JSValueVariant::JSString(
+                        JSString::from(js_string.to_string()),
+                    ));
+                }
+                Token::TemplateExpr(template_expr) => {
+                    let parent_scope = self.scope.clone();
+
+                    let value_scope = Scope::new(Some(parent_scope), template_expr.clone());
+                    let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
+                    value_interpretter.execute().unwrap();
+
+                    match value_interpretter.interpretted_value {
+                        JSValueVariant::JSNumber(js_number) => templated_string
+                            .addition_assignment(&JSValueVariant::JSNumber(js_number)),
+                        JSValueVariant::JSString(js_string) => templated_string
+                            .addition_assignment(&JSValueVariant::JSString(js_string)),
+
+                        _ => {}
+                    }
+                }
+                _ => {}
+            };
+        }
+
+        let value = JSValueVariant::JSString(templated_string);
+        self.interpretted_value = value;
+    }
+
+    pub fn handle_number(&mut self, n: &String) {
+        self.position += 1;
+        let number = n.parse::<f64>().unwrap();
+
+        let mut number = JSNumber::new(number);
+
+        if let Some(operator) = self.instructions.get(self.position + 1) {
+            match operator {
+                Token::Increment => {
+                    number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+                    self.interpretted_value = JSValueVariant::JSNumber(number);
+                }
+                Token::Decrement => {
+                    number.decrement_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+                    self.interpretted_value = JSValueVariant::JSNumber(number);
+                }
+                _ => {
+                    self.interpretted_value = JSValueVariant::JSNumber(number);
+                }
+            }
+        } else {
+            self.interpretted_value = JSValueVariant::JSNumber(number);
+        }
+    }
+
+    pub fn value_collector(&mut self, stop_at: Vec<Token>) -> Vec<Token> {
         let mut value_tokens: Vec<Token> = vec![];
 
         while let Some(v_token) = self.instructions.get(self.position) {
             let v_token = v_token.clone();
 
-            match v_token {
-                Token::Newline | Token::Semicolon => {
-                    return value_tokens;
-                }
-                _ => {}
+            if stop_at.iter().find(|e| e == &&v_token).is_some() {
+                return value_tokens;
             }
 
             value_tokens.push(v_token);
@@ -88,7 +147,8 @@ impl Interpretter {
             Token::Identifier(variable_name) => {
                 self.position += 2; // Skip variable_name and `=`
 
-                let value_tokens: Vec<Token> = self.value_collector();
+                let value_tokens: Vec<Token> =
+                    self.value_collector(vec![Token::Semicolon, Token::Newline]);
                 let parent_scope = self.scope.clone();
 
                 let value_scope = Scope::new(Some(parent_scope), value_tokens);
@@ -116,7 +176,8 @@ impl Interpretter {
             Token::Identifier(variable_name) => {
                 self.position += 2; // Skip variable_name and `=`
 
-                let value_tokens: Vec<Token> = self.value_collector();
+                let value_tokens: Vec<Token> =
+                    self.value_collector(vec![Token::Semicolon, Token::Newline]);
                 let parent_scope = self.scope.clone();
 
                 let value_scope = Scope::new(Some(parent_scope), value_tokens);
@@ -139,7 +200,7 @@ impl Interpretter {
         if let Some(operator) = self.instructions.get(self.position + 1) {
             self.position += 1;
             let operator = operator.clone();
-            let value_tokens = self.value_collector();
+            let value_tokens = self.value_collector(vec![Token::Semicolon, Token::Newline]);
             let parent_scope = self.scope.clone();
 
             match operator {
@@ -184,9 +245,11 @@ impl Interpretter {
         match variable_mut.value_mut() {
             JSValueVariant::JSNumber(js_number) => {
                 js_number.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+                self.interpretted_value = JSValueVariant::JSNumber(js_number.to_owned());
             }
             JSValueVariant::JSString(js_string) => {
                 js_string.addition_assignment(&JSValueVariant::JSNumber(JSNumber::new(1.0)));
+                self.interpretted_value = JSValueVariant::JSString(js_string.to_owned());
             }
             _ => {}
         }

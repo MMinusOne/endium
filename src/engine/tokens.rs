@@ -50,6 +50,7 @@ pub enum Token {
     String(String),
     Identifier(String),
     TemplateString(Vec<Token>),
+    TemplateExpr(Vec<Token>),
 
     // Operators
     Plus,
