@@ -12,15 +12,10 @@ use crate::{
     engine::value_variant::JSValueVariant,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-enum JSStringProperty {
-    Length,
-}
-
 #[derive(Clone, Debug)]
 pub struct JSString {
     is_primitive: bool,
-    properties: HashMap<JSStringProperty, JSValueVariant>,
+    properties: HashMap<String, JSValueVariant>,
     str_value: String,
 }
 
@@ -38,7 +33,7 @@ impl JSString {
             is_primitive: false,
             str_value: String::new(),
             properties: HashMap::from([(
-                JSStringProperty::Length,
+                String::from("length"),
                 JSValueVariant::JSNumber(JSNumber::new(0f64)),
             )]),
         }
@@ -51,7 +46,7 @@ impl JSString {
             is_primitive: false,
             str_value,
             properties: HashMap::from([(
-                JSStringProperty::Length,
+                String::from("length"),
                 JSValueVariant::JSNumber(JSNumber::new(str_len as f64)),
             )]),
         };
@@ -75,7 +70,7 @@ impl AdditionAssignment for JSString {
             }
             _ => {}
         }
-        if let Some(length) = self.properties.get_mut(&JSStringProperty::Length) {
+        if let Some(length) = self.properties.get_mut("length") {
             *length = JSValueVariant::JSNumber(JSNumber::new(self.str_value.len() as f64));
         }
     }

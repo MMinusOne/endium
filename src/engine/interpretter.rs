@@ -166,6 +166,19 @@ impl Interpretter {
 
             Token::LeftBrace => {
                 //Manage destruction.
+                while let Some(token) = self.instructions.get(self.position + 1) {
+                    self.position += 1;
+
+                    if let Some(next_token) = self.instructions.get(self.position + 1) {
+                        match next_token {
+                            Token::Semicolon => {}
+                            Token::RightBracket => {}
+                            Token::Comma => {}
+                            Token::Identifier(identifier) => {}
+                            _ => {}
+                        }
+                    }
+                }
             }
             _ => {}
         }
