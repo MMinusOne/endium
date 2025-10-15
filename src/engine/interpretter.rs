@@ -39,6 +39,8 @@ impl Interpretter {
 
                 Token::Identifier(identifier) => self.handle_identifier(identifier),
 
+                Token::For => self.handle_for(),
+
                 Token::Null => {
                     self.position += 1;
                     self.interpretted_value = JSValueVariant::Null;
@@ -57,6 +59,8 @@ impl Interpretter {
         }
         Ok(())
     }
+
+    pub fn handle_for(&mut self) {}
 
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
         self.position += 1;
