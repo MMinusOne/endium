@@ -5,3 +5,4 @@ pub mod scope;
 pub mod state;
 pub mod tokens;
 pub mod value_variant;
+pub mod stack;

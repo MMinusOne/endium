@@ -2,6 +2,7 @@ use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
 use crate::apis::features::assignment::decrement_assignment::DecrementAssignment;
 use crate::apis::features::assignment::division_assignment::DivisionAssignment;
 use crate::apis::features::assignment::multiplication_assignment::MultiplicationAssignment;
+use crate::engine::stack::Stack;
 use crate::engine::state::State;
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
@@ -166,17 +167,15 @@ impl Interpretter {
 
             Token::LeftBrace => {
                 //Manage destruction.
+                let mut destructured_vars: Vec<String> = Vec::new();
+                let mut stack: Stack<String> = Stack::new();
+                let mut level = 1;
+
                 while let Some(token) = self.instructions.get(self.position + 1) {
                     self.position += 1;
 
-                    if let Some(next_token) = self.instructions.get(self.position + 1) {
-                        match next_token {
-                            Token::Semicolon => {}
-                            Token::RightBracket => {}
-                            Token::Comma => {}
-                            Token::Identifier(identifier) => {}
-                            _ => {}
-                        }
+                    match token {
+                        Token::LeftBrace => {}
                     }
                 }
             }
