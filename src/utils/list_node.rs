@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct ListNode<T> {
     next: Option<Box<ListNode<T>>>,
     val: T,
@@ -12,8 +13,12 @@ impl<T> ListNode<T> {
         &self.val
     }
 
-    pub fn next(&self) -> Option<&ListNode<T>> {
+    pub fn next_node(&self) -> Option<&ListNode<T>> {
         self.next.as_deref()
+    }
+
+    pub fn new(val: T, next: Option<Box<ListNode<T>>>) -> Self {
+        Self { val, next }
     }
 }
 
