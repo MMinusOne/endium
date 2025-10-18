@@ -2,10 +2,13 @@ use std::collections::HashMap;
 
 use crate::{
     apis::{
-        features::assignment::{
-            addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
-            division_assignment::DivisionAssignment,
-            multiplication_assignment::MultiplicationAssignment,
+        features::{
+            assignment::{
+                addition_assignment::AdditionAssignment, decrement_assignment::DecrementAssignment,
+                division_assignment::DivisionAssignment,
+                multiplication_assignment::MultiplicationAssignment,
+            },
+            object_features::ObjectFeatures,
         },
         type_variants::js_number::JSNumber,
     },
@@ -90,4 +93,13 @@ impl MultiplicationAssignment for JSString {
 
 impl DivisionAssignment for JSString {
     fn division_assignment(&mut self, value: &JSValueVariant) {}
+}
+
+impl ObjectFeatures for JSString {
+    fn get_property(&self, property_key: &String) -> Option<&JSValueVariant> {
+        self.properties.get(property_key)
+    }
+    fn get_property_mut(&mut self, property_key: &String) -> Option<&mut JSValueVariant> {
+        self.properties.get_mut(property_key)
+    }
 }

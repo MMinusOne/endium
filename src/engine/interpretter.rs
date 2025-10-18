@@ -2,6 +2,7 @@ use crate::apis::features::assignment::addition_assignment::AdditionAssignment;
 use crate::apis::features::assignment::decrement_assignment::DecrementAssignment;
 use crate::apis::features::assignment::division_assignment::DivisionAssignment;
 use crate::apis::features::assignment::multiplication_assignment::MultiplicationAssignment;
+use crate::apis::features::object_features::ObjectFeatures;
 use crate::engine::stack::Stack;
 use crate::engine::state::State;
 use crate::{
@@ -167,17 +168,32 @@ impl Interpretter {
 
             Token::LeftBrace => {
                 //Manage destruction.
+
                 let mut destructured_vars: Vec<String> = Vec::new();
                 let mut stack: Stack<String> = Stack::new();
-                let mut level = 1;
+                let mut level = 0;
 
                 while let Some(token) = self.instructions.get(self.position + 1) {
-                    self.position += 1;
+                    // TODO: handle recursive destructuring, re-naming, and array.
 
                     match token {
-                        Token::LeftBrace => {}
+                        Token::LeftBrace => {
+                            level += 1;
+                            self.position += 1;
+                        }
+                        Token::Identifier(identifier) => {}
+                        Token::RightBrace => {
+                            level -= 1;
+                            self.position += 1;
+                            if level == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
                     }
                 }
+
+                println!("{:?}", destructured_vars);
             }
             _ => {}
         }

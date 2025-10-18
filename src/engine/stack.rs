@@ -15,6 +15,10 @@ impl<T> Stack<T> {
         self.items.last()
     }
 
+    pub fn peek_at(&self, index: usize) -> Option<&T> {
+        self.items.get(index)
+    }
+
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
