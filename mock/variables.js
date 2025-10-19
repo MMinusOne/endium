@@ -1,1 +1,1 @@
-const { length } = "Hello";
+const helloLength = "Hello".length;

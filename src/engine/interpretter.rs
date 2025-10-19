@@ -30,10 +30,7 @@ impl Interpretter {
 
                 Token::Let => self.handle_let(),
 
-                Token::String(s) => {
-                    self.position += 1;
-                    self.interpretted_value = JSValueVariant::JSString(JSString::from(s.clone())); // Unhandled strings by other tokens are the interpretted_value    
-                }
+                Token::String(s) => self.handle_string(s),
 
                 Token::TemplateString(t_s) => self.handle_template_string(t_s),
 
@@ -62,6 +59,53 @@ impl Interpretter {
         Ok(())
     }
 
+    pub fn handle_string(&mut self, s: &String) {
+        let mut value: JSValueVariant = JSValueVariant::JSString(JSString::from(s.clone()));
+        while let Some(next_operator) = self.instructions.get(self.position + 1) {
+            match next_operator {
+                Token::Dot => {
+                    self.position += 1;
+                    continue;
+                }
+                Token::Identifier(identifier) => {
+                    self.position += 1;
+                    if let Some(next_operator) = self.instructions.get(self.position + 1) {
+                        match next_operator {
+                            Token::Dot => {
+                                match value {
+                                    JSValueVariant::JSString(js_string) => {
+                                        value = js_string.get_property(identifier).unwrap().clone();
+                                    }
+                                    _ => {}
+                                }
+                                self.position += 1;
+                                continue;
+                            }
+                            _ => {
+                                self.interpretted_value = value.clone();
+                                self.position += 1;
+                                break;
+                            }
+                        }
+                    } else {
+                        match value {
+                            JSValueVariant::JSString(js_string) => {
+                                value = js_string.get_property(identifier).unwrap().clone();
+                            }
+                            _ => {}
+                        }
+                        self.interpretted_value = value.clone();
+                        self.position += 1;
+                    }
+                }
+                _ => {
+                    self.interpretted_value = value.clone();
+                    self.position += 1;
+                    break;
+                }
+            }
+        }
+    }
     pub fn handle_for(&mut self) {}
 
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
@@ -168,32 +212,6 @@ impl Interpretter {
 
             Token::LeftBrace => {
                 //Manage destruction.
-
-                let mut destructured_vars: Vec<String> = Vec::new();
-                let mut stack: Stack<String> = Stack::new();
-                let mut level = 0;
-
-                while let Some(token) = self.instructions.get(self.position + 1) {
-                    // TODO: handle recursive destructuring, re-naming, and array.
-
-                    match token {
-                        Token::LeftBrace => {
-                            level += 1;
-                            self.position += 1;
-                        }
-                        Token::Identifier(identifier) => {}
-                        Token::RightBrace => {
-                            level -= 1;
-                            self.position += 1;
-                            if level == 0 {
-                                break;
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-
-                println!("{:?}", destructured_vars);
             }
             _ => {}
         }
