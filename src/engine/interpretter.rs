@@ -36,6 +36,8 @@ impl Interpretter {
 
                 Token::Number(n) => self.handle_number(n),
 
+                Token::Function => self.handle_function(),
+
                 Token::Identifier(identifier) => self.handle_identifier(identifier),
 
                 Token::For => self.handle_for(),
@@ -107,6 +109,22 @@ impl Interpretter {
         }
     }
     pub fn handle_for(&mut self) {}
+
+    pub fn handle_function(&mut self) {
+        self.position += 1; // Skip `function`
+
+        let function_name = self.instructions.get(self.position);
+
+        self.position += 2; // Skip identifier name and left paren.
+
+        let mut argument_names = self.value_collector(vec![Token::RightParen]);
+
+        for (argument_index, argument_name) in argument_names.clone().iter().enumerate() {
+            if argument_name == &Token::Comma {
+                argument_names.remove(argument_index);
+            }
+        }
+    }
 
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
         self.position += 1;

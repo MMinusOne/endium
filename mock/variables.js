@@ -1,1 +1,3 @@
-const helloLength = "Hello".length;
+function a(c, b) {
+    
+}
