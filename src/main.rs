@@ -7,7 +7,7 @@ use engine::*;
 
 use std::env;
 
-use crate::{engine::heap::Heap, errors::Error};
+use crate::errors::Error;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,7 +26,7 @@ fn main() {
 
         let mut interpretter = interpretter::Interpretter::new(Some(tokens), None);
         let _ = interpretter.execute();
-        let heap_data = Heap::instance().lock().unwrap();
+
         println!("{:#?}", interpretter.scope());
     } else {
         Error::FileNotFound(file_path.to_string());

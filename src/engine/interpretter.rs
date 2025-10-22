@@ -124,6 +124,31 @@ impl Interpretter {
                 argument_names.remove(argument_index);
             }
         }
+
+        self.position += 1;
+
+        let mut level = 0;
+        let mut fn_instructions: Vec<Token> = vec![];
+
+        while let Some(token) = self.instructions.get(self.position) {
+            self.position += 1;
+            match token {
+                Token::RightBrace => {
+                    level = level + 1;
+                }
+                Token::LeftBrace => {
+                    level = level - 1;
+                    if level == 0 {
+                        break;
+                    }
+                }
+                _ => {
+                    fn_instructions.push(token.clone());
+                }
+            }
+        }
+
+        println!("{:?}", fn_instructions);
     }
 
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
