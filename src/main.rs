@@ -7,7 +7,7 @@ use engine::*;
 
 use std::env;
 
-use crate::errors::Error;
+use crate::errors::EndiumError;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -29,6 +29,6 @@ fn main() {
 
         // println!("{:#?}", interpretter.scope());
     } else {
-        Error::FileNotFound(file_path.to_string());
+        EndiumError::FileNotFound(file_path.to_string());
     }
 }
