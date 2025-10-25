@@ -1,5 +1,7 @@
-function add(a, b) {
-  return a + b;
+function add() {
+  let c = 2;
 }
 
-const sum = add(1, 2);
+add();
+add();
+add();

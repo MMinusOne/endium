@@ -3,6 +3,7 @@ use crate::apis::features::assignment::decrement_assignment::DecrementAssignment
 use crate::apis::features::assignment::division_assignment::DivisionAssignment;
 use crate::apis::features::assignment::multiplication_assignment::MultiplicationAssignment;
 use crate::apis::features::object_features::ObjectFeatures;
+use crate::apis::type_variants::js_function::JSFunction;
 use crate::engine::stack::Stack;
 use crate::engine::state::State;
 use crate::{
@@ -18,6 +19,7 @@ pub struct Interpretter {
     instructions: Vec<Token>,
     interpretted_value: JSValueVariant,
     position: usize,
+    is_running: bool,
 }
 
 impl Interpretter {
@@ -25,7 +27,13 @@ impl Interpretter {
         let scope_instructions = self.scope.instructions().clone();
 
         while let Some(token) = scope_instructions.get(self.position) {
+            if !self.is_running {
+                break;
+            }
+
             let _ = match token {
+                Token::Return => self.handle_return(),
+
                 Token::Const => self.handle_const(),
 
                 Token::Let => self.handle_let(),
@@ -59,6 +67,10 @@ impl Interpretter {
             };
         }
         Ok(())
+    }
+
+    pub fn stop(&mut self) {
+        self.is_running = false;
     }
 
     pub fn handle_string(&mut self, s: &String) {
@@ -110,22 +122,54 @@ impl Interpretter {
     }
     pub fn handle_for(&mut self) {}
 
+    pub fn handle_return(&mut self) {
+        self.position += 1; // Skip return keyword
+
+        if let Some(next_keyword) = self.instructions.get(self.position + 1) {
+            let value_tokens = self.value_collector(vec![Token::Comma, Token::Newline]);
+            let parent_scope = self.scope.clone();
+
+            let value_scope = Scope::new(Some(parent_scope), value_tokens);
+            let mut value_interpretter = Interpretter::new(None, Some(value_scope));
+            value_interpretter.execute().unwrap();
+            let value = value_interpretter.interpretted_value;
+
+            self.interpretted_value = value;
+        }
+
+        self.stop();
+    }
+
     pub fn handle_function(&mut self) {
         self.position += 1; // Skip `function`
 
-        let function_name = self.instructions.get(self.position);
+        let fn_name = match self.instructions.get(self.position).unwrap() {
+            Token::Identifier(name) => name,
+            _ => panic!("Function name must be an identifier."),
+        };
 
         self.position += 2; // Skip identifier name and left paren.
 
-        let mut argument_names = self.value_collector(vec![Token::RightParen]);
+        let mut arg_names: Vec<String> = vec![];
 
-        for (argument_index, argument_name) in argument_names.clone().iter().enumerate() {
-            if argument_name == &Token::Comma {
-                argument_names.remove(argument_index);
+        while let Some(v_token) = self.instructions.get(self.position) {
+            let v_token = v_token.clone();
+
+            match v_token {
+                Token::Identifier(identifier) => {
+                    self.position += 1;
+                    arg_names.push(identifier);
+                }
+                Token::RightParen => {
+                    self.position += 1;
+                    break;
+                }
+                _ => {
+                    self.position += 1;
+                    continue;
+                }
             }
         }
-
-        self.position += 1;
 
         let mut level = 0;
         let mut fn_instructions: Vec<Token> = vec![];
@@ -133,10 +177,10 @@ impl Interpretter {
         while let Some(token) = self.instructions.get(self.position) {
             self.position += 1;
             match token {
-                Token::RightBrace => {
+                Token::LeftBrace => {
                     level = level + 1;
                 }
-                Token::LeftBrace => {
+                Token::RightBrace => {
                     level = level - 1;
                     if level == 0 {
                         break;
@@ -148,7 +192,18 @@ impl Interpretter {
             }
         }
 
-        println!("{:?}", fn_instructions);
+        let scope_clone = self.scope.clone();
+
+        let fn_value =
+            JSValueVariant::JSFunction(JSFunction::new(fn_instructions, arg_names, scope_clone));
+
+        self.scope
+            .insert_state(fn_name.clone(), State::new(fn_value, true));
+        println!(
+            "{:?} {}",
+            self.instructions.get(self.position),
+            self.position
+        );
     }
 
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
@@ -228,6 +283,7 @@ impl Interpretter {
             value_tokens.push(v_token);
             self.position += 1;
         }
+
         value_tokens
     }
 
@@ -295,8 +351,8 @@ impl Interpretter {
             let operator = operator.clone();
             let value_tokens = self.value_collector(vec![Token::Semicolon, Token::Newline]);
             let parent_scope = self.scope.clone();
-
             match operator {
+                Token::LeftParen => self.handle_function_execution(identifier),
                 Token::Increment => self.handle_increment(identifier),
                 Token::Decrement => self.handle_decrement(identifier),
                 Token::PlusAssign
@@ -325,6 +381,19 @@ impl Interpretter {
             let variable = self.scope.get_state(identifier).unwrap();
             self.interpretted_value = variable.value().clone();
             self.position += 1;
+        }
+    }
+
+    fn handle_function_execution(&mut self, fn_identifier: &String) {
+        self.position += 1 + 1 + 1; // Skip the fn_identifier declaration
+
+        let function = self.scope.get_state_mut(fn_identifier).unwrap();
+
+        match function.value_mut() {
+            JSValueVariant::JSFunction(js_func) => {
+                js_func.execute(vec![]);
+            }
+            _ => {}
         }
     }
 
@@ -461,6 +530,7 @@ impl Interpretter {
             scope,
             interpretted_value: JSValueVariant::Undefined,
             position: 0,
+            is_running: true,
         }
     }
 }

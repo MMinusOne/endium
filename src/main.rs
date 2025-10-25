@@ -27,7 +27,7 @@ fn main() {
         let mut interpretter = interpretter::Interpretter::new(Some(tokens), None);
         let _ = interpretter.execute();
 
-        println!("{:#?}", interpretter.scope());
+        // println!("{:#?}", interpretter.scope());
     } else {
         Error::FileNotFound(file_path.to_string());
     }

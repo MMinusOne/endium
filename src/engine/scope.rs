@@ -9,9 +9,9 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct Scope {
     state: HashMap<String, State>,
+    parent_state: HashMap<String, State>,
     depth: usize,
     instructions: Vec<Token>,
-    parent: Option<Rc<RefCell<Scope>>>,
     children: Vec<Rc<RefCell<Scope>>>,
 
     intialized_parent_state: bool,
@@ -19,30 +19,29 @@ pub struct Scope {
 
 impl Scope {
     pub fn initialize_parent_state(&mut self) {
-        if let Some(parent) = &self.parent {
-            let parent = parent.borrow();
-            if self.intialized_parent_state == true {
-                return;
-            }
-            for (key, state) in parent.state.iter() {
-                match state.value() {
-                    JSValueVariant::JSString(js_string) => {
-                        // self.state.insert(
-                        //     key.to_string(),
-                        //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
-                        // );
-                        self.state.insert(key.to_string(), state.clone());
-                    }
-                    JSValueVariant::JSPointer(js_ptr) => {
-                        // self.state
-                        //     .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
-                    }
-                    JSValueVariant::JSFunction(js_function) => {}
-                    JSValueVariant::JSBoolean(js_bool) => {}
-                    JSValueVariant::JSNumber(js_number) => {}
-                    JSValueVariant::Null => {}
-                    JSValueVariant::Undefined => {}
+        if self.intialized_parent_state == true {
+            return;
+        }
+
+        for (key, state) in self.parent_state.iter() {
+            match state.value() {
+                JSValueVariant::JSString(js_string) => {
+                    // self.state.insert(
+                    //     key.to_string(),
+                    //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
+                    // );
+
+                    self.state.insert(key.to_string(), state.clone());
                 }
+                JSValueVariant::JSPointer(js_ptr) => {
+                    // self.state
+                    //     .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
+                }
+                JSValueVariant::JSFunction(js_function) => {}
+                JSValueVariant::JSBoolean(js_bool) => {}
+                JSValueVariant::JSNumber(js_number) => {}
+                JSValueVariant::Null => {}
+                JSValueVariant::Undefined => {}
             }
         }
     }
@@ -67,12 +66,23 @@ impl Scope {
         self.state.get_mut(key)
     }
 
+    pub fn state(&self) -> &HashMap<String, State> {
+        &self.state
+    }
+
+    pub fn clear_state(&mut self) {
+        self.state.clear();
+    }
+
     pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {
         let parent_depth = parent.as_ref().map(|p| p.depth).unwrap_or(0);
-        let parent_rc = parent.map(|p| Rc::new(RefCell::new(p)));
+        let parent_state = match &parent {
+            Some(p) => p.state().clone(),
+            None => HashMap::new(),
+        };
 
         let mut scope_self = Self {
-            parent: parent_rc.clone(),
+            parent_state,
             intialized_parent_state: false,
             state: HashMap::new(),
             depth: parent_depth,
@@ -82,8 +92,7 @@ impl Scope {
 
         scope_self.initialize_parent_state();
 
-        if let Some(scope_parent) = &scope_self.parent {
-            let mut scope_parent = scope_parent.borrow_mut();
+        if let Some(mut scope_parent) = parent {
             scope_parent.add_child(scope_self.clone());
         }
 
