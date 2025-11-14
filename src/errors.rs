@@ -5,8 +5,10 @@ use crate::engine::tokens::Token;
 pub enum EndiumError {
     // Critical
     CriticalFileNotFound(String),
-    AssignmentToConstantVariable(String),
+    AssignmentToConstantVariableError(String),
+    IdentifierAlreadyDeclaredError(String),
     NotDefinedError(String),
+    ExpectedSyntaxError(String),
 
     // Error
     UndefinedError(String),

@@ -1,7 +1,1 @@
-function add() {
-  let c = 2;
-}
-
-add();
-add();
-add();
+for (let int = 0; i < 10; i++)

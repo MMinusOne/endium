@@ -120,8 +120,51 @@ impl Interpretter {
             }
         }
     }
-    pub fn handle_for(&mut self) {}
+    pub fn handle_for(&mut self) {
+        let mut for_definition_parts: Vec<Vec<Token>> = Vec::new();
 
+        let mut depth = 0;
+
+        while let Some(token) = self.instructions.get(self.position + 1) {
+            match token {
+                Token::LeftParen => {
+                    depth += 1;
+
+                    if depth == 1 {
+                        for_definition_parts.push(vec![]);
+                    }
+
+                    if depth > 1 {
+                        if let Some(last_definition) = for_definition_parts.last_mut() {
+                            last_definition.push(token.clone());
+                        }
+                    }
+                }
+                Token::RightParen => {
+                    depth -= 1;
+
+                    if depth > 1 {
+                        if let Some(last_definition) = for_definition_parts.last_mut() {
+                            last_definition.push(token.clone());
+                        }
+                    }
+                }
+                Token::Semicolon => {
+                    if depth == 0 {
+                        break;
+                    } else {
+                        for_definition_parts.push(vec![]);
+                    }
+                }
+                _ => {
+                    if let Some(last_definition) = for_definition_parts.last_mut() {
+                        last_definition.push(token.clone());
+                    }
+                }
+            }
+            self.position += 1;
+        }
+    }
     pub fn handle_return(&mut self) {
         self.position += 1; // Skip return keyword
 
@@ -139,7 +182,6 @@ impl Interpretter {
 
         self.stop();
     }
-
     pub fn handle_function(&mut self) {
         self.position += 1; // Skip `function`
 
@@ -199,13 +241,13 @@ impl Interpretter {
 
         self.scope
             .insert_state(fn_name.clone(), State::new(fn_value, true));
+
         println!(
             "{:?} {}",
             self.instructions.get(self.position),
             self.position
         );
     }
-
     pub fn handle_template_string(&mut self, template_tokens: &Vec<Token>) {
         self.position += 1;
         let mut templated_string = JSString::new();
@@ -242,7 +284,6 @@ impl Interpretter {
         let value = JSValueVariant::JSString(templated_string);
         self.interpretted_value = value;
     }
-
     pub fn handle_number(&mut self, n: &String) {
         self.position += 1;
 
@@ -386,7 +427,7 @@ impl Interpretter {
 
     fn handle_function_execution(&mut self, fn_identifier: &String) {
         self.position += 1 + 1 + 1; // Skip the fn_identifier declaration
-
+        println!("{:?}", self.scope);
         let function = self.scope.get_state_mut(fn_identifier).unwrap();
 
         match function.value_mut() {
