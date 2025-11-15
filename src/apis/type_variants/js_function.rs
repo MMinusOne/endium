@@ -29,7 +29,7 @@ impl JSFunction {
                     .borrow_mut()
                     .insert_state(key.to_string(), State::new(state, true));
             });
-        let mut interpretter = interpretter::Interpretter::new(None, Some(self.scope.clone()));
+        let mut interpretter = interpretter::Interpretter::new(None, Some(Rc::clone(&self.scope)));
         let _ = interpretter.execute();
         println!("Function scope {:#?}", self.scope);
         self.scope.borrow_mut().clear_state();

@@ -8,8 +8,8 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Scope {
-    state: HashMap<String, State>,
-    parent_state: HashMap<String, State>,
+    state: HashMap<String, Rc<RefCell<State>>>,
+    parent_state: HashMap<String, Rc<RefCell<State>>>,
     depth: usize,
     instructions: Vec<Token>,
     children: Vec<Rc<RefCell<Scope>>>,
@@ -23,25 +23,7 @@ impl Scope {
         }
 
         for (key, state) in self.parent_state.iter() {
-            match state.value() {
-                JSValueVariant::JSString(js_string) => {
-                    // self.state.insert(
-                    //     key.to_string(),
-                    //     ValueVariant::Pointer(js_string.heap_ptr().clone()),
-                    // );
-
-                    self.state.insert(key.to_string(), state.clone());
-                }
-                JSValueVariant::JSPointer(js_ptr) => {
-                    // self.state
-                    //     .insert(key.to_string(), JSValueVariant::JSPointer(js_ptr.clone()));
-                }
-                JSValueVariant::JSFunction(js_function) => {}
-                JSValueVariant::JSBoolean(js_bool) => {}
-                JSValueVariant::JSNumber(js_number) => {}
-                JSValueVariant::Null => {}
-                JSValueVariant::Undefined => {}
-            }
+            self.state.insert(key.into(), Rc::clone(state));
         }
     }
 
@@ -54,18 +36,18 @@ impl Scope {
     }
 
     pub fn insert_state(&mut self, key: String, state: State) {
-        self.state.insert(key, state);
+        self.state.insert(key, Rc::new(RefCell::new(state)));
     }
 
-    pub fn get_state(&self, key: &String) -> Option<&State> {
+    pub fn get_state(&self, key: &String) -> Option<&Rc<RefCell<State>>> {
         self.state.get(key)
     }
 
-    pub fn get_state_mut(&mut self, key: &String) -> Option<&mut State> {
+    pub fn get_state_mut(&mut self, key: &String) -> Option<&mut Rc<RefCell<State>>> {
         self.state.get_mut(key)
     }
 
-    pub fn state(&self) -> &HashMap<String, State> {
+    pub fn state(&self) -> &HashMap<String, Rc<RefCell<State>>> {
         &self.state
     }
 
