@@ -2,7 +2,7 @@ use crate::apis::type_variants::js_string::JSString;
 use crate::engine::state::State;
 use crate::engine::tokens::Token;
 use crate::engine::value_variant::JSValueVariant;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -13,7 +13,6 @@ pub struct Scope {
     depth: usize,
     instructions: Vec<Token>,
     children: Vec<Rc<RefCell<Scope>>>,
-
     intialized_parent_state: bool,
 }
 
@@ -74,10 +73,10 @@ impl Scope {
         self.state.clear();
     }
 
-    pub fn new(parent: Option<Scope>, instructions: Vec<Token>) -> Self {
-        let parent_depth = parent.as_ref().map(|p| p.depth).unwrap_or(0);
+    pub fn new(parent: Option<Rc<RefCell<Scope>>>, instructions: Vec<Token>) -> Self {
+        let parent_depth = parent.as_ref().map(|p| p.borrow().depth).unwrap_or(0);
         let parent_state = match &parent {
-            Some(p) => p.state().clone(),
+            Some(p) => p.borrow().state().clone(),
             None => HashMap::new(),
         };
 
@@ -92,8 +91,8 @@ impl Scope {
 
         scope_self.initialize_parent_state();
 
-        if let Some(mut scope_parent) = parent {
-            scope_parent.add_child(scope_self.clone());
+        if let Some(scope_parent_rc) = parent {
+            scope_parent_rc.borrow_mut().add_child(scope_self.clone());
         }
 
         scope_self

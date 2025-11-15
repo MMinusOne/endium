@@ -4,18 +4,19 @@ use crate::apis::features::assignment::division_assignment::DivisionAssignment;
 use crate::apis::features::assignment::multiplication_assignment::MultiplicationAssignment;
 use crate::apis::features::object_features::ObjectFeatures;
 use crate::apis::type_variants::js_function::JSFunction;
-use crate::engine::stack::Stack;
+use crate::engine::scope;
 use crate::engine::state::State;
 use crate::{
     apis::type_variants::{js_number::JSNumber, js_string::JSString},
     engine::{tokens::Token, value_variant::JSValueVariant},
     scope::Scope,
 };
+use std::cell::RefCell;
 use std::error::Error;
-use std::os;
+use std::rc::Rc;
 
 pub struct Interpretter {
-    scope: Scope,
+    scope: Rc<RefCell<Scope>>,
     instructions: Vec<Token>,
     interpretted_value: JSValueVariant,
     position: usize,
@@ -24,7 +25,7 @@ pub struct Interpretter {
 
 impl Interpretter {
     pub fn execute(&mut self) -> Result<(), Box<dyn Error>> {
-        let scope_instructions = self.scope.instructions().clone();
+        let scope_instructions = self.scope.borrow().instructions().clone();
 
         while let Some(token) = scope_instructions.get(self.position) {
             if !self.is_running {
@@ -164,6 +165,38 @@ impl Interpretter {
             }
             self.position += 1;
         }
+
+        let state = Rc::new(RefCell::new(Scope::new(
+            Some(self.scope.clone()),
+            for_definition_parts[0].clone(),
+        )));
+        let _ = Interpretter::new(
+            Some(for_definition_parts[0].clone()),
+            Some(Rc::clone(&state)),
+        )
+        .execute();
+
+        loop {
+            let mut condition_interpretter = Interpretter::new(
+                Some(for_definition_parts[1].clone()),
+                Some(Rc::clone(&state)),
+            );
+
+            let _ = condition_interpretter.execute();
+            match condition_interpretter.interpretted_value {
+                JSValueVariant::JSBoolean(js_bool) => {
+                    if js_bool.bool_value() == false {
+                        break;
+                    }
+                }
+                _ => {}
+            }
+
+            println!("{:?}", state);
+
+            let _ = Interpretter::new(Some(for_definition_parts[2].clone()), Some(state.clone()))
+                .execute();
+        }
     }
     pub fn handle_return(&mut self) {
         self.position += 1; // Skip return keyword
@@ -172,7 +205,7 @@ impl Interpretter {
             let value_tokens = self.value_collector(vec![Token::Comma, Token::Newline]);
             let parent_scope = self.scope.clone();
 
-            let value_scope = Scope::new(Some(parent_scope), value_tokens);
+            let value_scope = Rc::new(RefCell::new(Scope::new(Some(parent_scope), value_tokens)));
             let mut value_interpretter = Interpretter::new(None, Some(value_scope));
             value_interpretter.execute().unwrap();
             let value = value_interpretter.interpretted_value;
@@ -234,12 +267,14 @@ impl Interpretter {
             }
         }
 
-        let scope_clone = self.scope.clone();
-
-        let fn_value =
-            JSValueVariant::JSFunction(JSFunction::new(fn_instructions, arg_names, scope_clone));
+        let fn_value = JSValueVariant::JSFunction(JSFunction::new(
+            fn_instructions,
+            arg_names,
+            Rc::clone(&self.scope),
+        ));
 
         self.scope
+            .borrow_mut()
             .insert_state(fn_name.clone(), State::new(fn_value, true));
 
         println!(
@@ -264,7 +299,10 @@ impl Interpretter {
                 Token::TemplateExpr(template_expr) => {
                     let parent_scope = self.scope.clone();
 
-                    let value_scope = Scope::new(Some(parent_scope), template_expr.clone());
+                    let value_scope = Rc::new(RefCell::new(Scope::new(
+                        Some(parent_scope),
+                        template_expr.clone(),
+                    )));
                     let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
                     value_interpretter.execute().unwrap();
 
@@ -341,13 +379,16 @@ impl Interpretter {
                     self.value_collector(vec![Token::Semicolon, Token::Newline]);
                 let parent_scope = self.scope.clone();
 
-                let value_scope = Scope::new(Some(parent_scope), value_tokens);
+                let value_scope =
+                    Rc::new(RefCell::new(Scope::new(Some(parent_scope), value_tokens)));
                 let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
                 value_interpretter.execute().unwrap();
                 let value = value_interpretter.interpretted_value;
                 let state: State = State::new(value, false);
 
-                self.scope.insert_state(variable_name.to_string(), state);
+                self.scope
+                    .borrow_mut()
+                    .insert_state(variable_name.to_string(), state);
             }
 
             Token::LeftBrace => {
@@ -370,13 +411,16 @@ impl Interpretter {
                     self.value_collector(vec![Token::Semicolon, Token::Newline]);
                 let parent_scope = self.scope.clone();
 
-                let value_scope = Scope::new(Some(parent_scope), value_tokens);
+                let value_scope =
+                    Rc::new(RefCell::new(Scope::new(Some(parent_scope), value_tokens)));
                 let mut value_interpretter = Interpretter::new(None, Some(value_scope)); // Make an interpretter with the value as instructions.
                 value_interpretter.execute().unwrap();
                 let value = value_interpretter.interpretted_value;
                 let state: State = State::new(value, true);
 
-                self.scope.insert_state(variable_name.to_string(), state);
+                self.scope
+                    .borrow_mut()
+                    .insert_state(variable_name.to_string(), state);
             }
 
             Token::LeftBrace => {
@@ -400,7 +444,8 @@ impl Interpretter {
                 | Token::MinusAssign
                 | Token::DivideAssign
                 | Token::MultiplyAssign => {
-                    let value_scope = Scope::new(Some(parent_scope), value_tokens);
+                    let value_scope =
+                        Rc::new(RefCell::new(Scope::new(Some(parent_scope), value_tokens)));
                     let mut value_interpretter = Interpretter::new(None, Some(value_scope));
                     value_interpretter.execute().unwrap();
                     let value = value_interpretter.interpretted_value;
@@ -419,7 +464,8 @@ impl Interpretter {
                 _ => {}
             };
         } else {
-            let variable = self.scope.get_state(identifier).unwrap();
+            let scope = self.scope.borrow();
+            let variable = scope.get_state(identifier).unwrap();
             self.interpretted_value = variable.value().clone();
             self.position += 1;
         }
@@ -428,7 +474,8 @@ impl Interpretter {
     fn handle_function_execution(&mut self, fn_identifier: &String) {
         self.position += 1 + 1 + 1; // Skip the fn_identifier declaration
         println!("{:?}", self.scope);
-        let function = self.scope.get_state_mut(fn_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let function = scope_borrow.get_state_mut(fn_identifier).unwrap();
 
         match function.value_mut() {
             JSValueVariant::JSFunction(js_func) => {
@@ -439,7 +486,8 @@ impl Interpretter {
     }
 
     fn handle_increment(&mut self, variable_identifier: &String) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -459,7 +507,8 @@ impl Interpretter {
     }
 
     fn handle_decrement(&mut self, variable_identifier: &String) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -477,7 +526,8 @@ impl Interpretter {
     }
 
     fn handle_addition_assignment(&mut self, variable_identifier: &String, value: JSValueVariant) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -499,7 +549,8 @@ impl Interpretter {
         variable_identifier: &String,
         value: JSValueVariant,
     ) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -521,7 +572,8 @@ impl Interpretter {
         variable_identifier: &String,
         value: JSValueVariant,
     ) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -539,7 +591,8 @@ impl Interpretter {
     }
 
     fn handle_division_assignment(&mut self, variable_identifier: &String, value: JSValueVariant) {
-        let variable_mut = self.scope.get_state_mut(variable_identifier).unwrap();
+        let mut scope_borrow = self.scope.borrow_mut();
+        let variable_mut = scope_borrow.get_state_mut(variable_identifier).unwrap();
 
         if !variable_mut.is_mutable() {
             return; // Assignment to constant variable error.
@@ -556,19 +609,21 @@ impl Interpretter {
         }
     }
 
-    pub fn scope(&self) -> &Scope {
+    pub fn scope(&self) -> &Rc<RefCell<Scope>> {
         &self.scope
     }
 
-    pub fn new(tokens: Option<Vec<Token>>, scope: Option<Scope>) -> Self {
+    pub fn new(tokens: Option<Vec<Token>>, scope: Option<Rc<RefCell<Scope>>>) -> Self {
         let scope = match scope {
             Some(s) => s,
-            None => Scope::new(None, tokens.unwrap()),
+            None => Rc::new(RefCell::new(Scope::new(None, tokens.unwrap()))),
         };
 
+        let scope_borrow = scope.borrow();
+
         Self {
-            instructions: scope.instructions().clone(),
-            scope,
+            instructions: scope_borrow.instructions().clone(),
+            scope: Rc::clone(&scope),
             interpretted_value: JSValueVariant::Undefined,
             position: 0,
             is_running: true,
